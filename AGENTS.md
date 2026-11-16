@@ -28,3 +28,7 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Business rules (pricing, lead times, backward planning, stock reservation, FEFO, invoice folios, cancellations) live in SECURITY DEFINER SQL functions with role checks; the UI only calls `rpc`, so rules cannot be bypassed from the browser.
+- Roles live only in `user_roles`, assigned by the `handle_new_user` trigger; the Equipo role reads tasks via `mis_tareas()` and never touches cost or payment tables.
