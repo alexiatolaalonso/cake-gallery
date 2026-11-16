@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+export const TZ = "America/Mexico_City";
 import { queryOptions } from "@tanstack/react-query";
 
 export type Rol = "administracion" | "mostrador" | "produccion" | "equipo";
@@ -24,15 +25,15 @@ export const mxn = (n: number | null | undefined) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(Number(n ?? 0));
 
 export const fechaHora = (s: string | null | undefined) =>
-  s ? new Date(s).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }) : "—";
+  s ? new Date(s).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: TZ }) : "—";
 export const fecha = (s: string | null | undefined) =>
-  s ? new Date(s.length === 10 ? s + "T12:00:00" : s).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" }) : "—";
-export const hora = (s: string) => new Date(s).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+  s ? new Date(s.length === 10 ? s + "T12:00:00" : s).toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short", timeZone: TZ }) : "—";
+export const hora = (s: string) => new Date(s).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 
 export const hoyISO = (offset = 0) => {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toLocaleDateString("en-CA");
+  return d.toLocaleDateString("en-CA", { timeZone: TZ });
 };
 
 export function errMsg(e: unknown) {
