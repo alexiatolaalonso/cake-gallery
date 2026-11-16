@@ -38,7 +38,9 @@ function Cotizador() {
   }, [cat, f.tipo]);
 
   const fechaISO = useMemo(() => (f.fecha ? new Date(`${f.fecha}T${f.hora}`).toISOString() : null), [f.fecha, f.hora]);
-  const porcionesOk = f.porciones >= 10 && f.porciones % 10 === 0;
+  const tipoSel = cat?.tipos.find((t) => t.id === f.tipo);
+  const pMin = tipoSel?.min_porciones ?? 10, pMax = tipoSel?.max_porciones ?? 10000;
+  const porcionesOk = f.porciones >= 10 && f.porciones % 10 === 0 && f.porciones >= pMin && f.porciones <= pMax;
 
   useEffect(() => {
     if (!f.tipo || !f.sabor || !f.nivel) return;
@@ -54,7 +56,26 @@ function Cotizador() {
   }, [f.tipo, f.porciones, f.sabor, f.relleno, f.cobertura, f.nivel, f.modo, fechaISO]);
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setF((x) => ({ ...x, [k]: k === "porciones" ? Number(e.target.value) : e.target.value }));
+    setF((x) => {
+      if (k === "tipo") {
+        const t = cat?.tipos.find((y) => y.id === e.target.value);
+        const p = t ? Math.min(Math.max(x.porciones, t.min_porciones), t.max_porciones) : x.porciones;
+        return { ...x, tipo: e.target.value, porciones: p };
+      }
+      return { ...x, [k]: k === "porciones" ? Number(e.target.value) : e.target.value };
+    });
+  const [fichaCliente, setFichaCliente] = useState(false);
+  const [ficha, setFicha] = useState({ nombre: "", telefono: "", correo: "", tipo: "particular" });
+  async function guardarCliente() {
+    if (!ficha.nombre.trim()) { toast.error("Escribe el nombre del cliente"); return; }
+    const { data, error } = await supabase.from("clientes").insert({ nombre: ficha.nombre.trim(), telefono: ficha.telefono || null, correo: ficha.correo || null, tipo: ficha.tipo }).select("id").single();
+    if (error) { toast.error(errMsg(error)); return; }
+    await qc.invalidateQueries({ queryKey: ["clientes"] });
+    setF((x) => ({ ...x, cliente: data.id }));
+    setFicha({ nombre: "", telefono: "", correo: "", tipo: "particular" });
+    setFichaCliente(false);
+    toast.success("Cliente guardado");
+  }
   const nombreDe = (lista: { id: string; nombre: string }[] | undefined, id: string) => lista?.find((x) => x.id === id)?.nombre ?? "";
 
   async function clienteId() {
@@ -68,7 +89,7 @@ function Cotizador() {
   }
 
   async function guardar() {
-    if (!porcionesOk) throw new Error("Las porciones van de 10 en 10");
+    if (!porcionesOk) throw new Error(`Este pastel admite de ${pMin} a ${pMax} porciones, de 10 en 10`);
     if (!fechaISO) throw new Error("Indica fecha y hora de entrega");
     const cid = await clienteId();
     const { data, error } = await supabase.rpc("guardar_borrador", {
@@ -131,7 +152,8 @@ function Cotizador() {
           <fieldset className="grid gap-4 sm:grid-cols-2">
             <legend className="mb-2 font-display text-lg font-bold">Cliente</legend>
             <div className="space-y-1 sm:col-span-2">
-              <Label>Cliente registrado</Label>
+              <div className="flex items-center justify-between"><Label>Cliente registrado</Label>
+                <Button type="button" size="sm" variant="outline" onClick={() => setFichaCliente(true)}>+ Nuevo cliente</Button></div>
               <select className={sel} value={f.cliente} onChange={set("cliente")}>
                 <option value="">— Nuevo cliente —</option>
                 {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.tipo})</option>)}
@@ -150,8 +172,8 @@ function Cotizador() {
               {tipo && <p className="text-xs text-muted-foreground">De {tipo.min_porciones} a {tipo.max_porciones} porciones{tipo.requiere_montaje ? " · Requiere montaje" : ""}</p>}
             </div>
             <div className="space-y-1"><Label htmlFor="porc">Porciones (múltiplos de 10)</Label>
-              <Input id="porc" type="number" step={10} min={10} value={f.porciones} onChange={set("porciones")} aria-invalid={!porcionesOk} />
-              {!porcionesOk && <p className="text-xs font-bold text-destructive">⚠ {f.porciones} no es válido: usa 10, 20, 30…</p>}
+              <Input id="porc" type="number" step={10} min={pMin} max={pMax} value={f.porciones} onChange={set("porciones")} aria-invalid={!porcionesOk} />
+              {!porcionesOk && <p className="text-xs font-bold text-destructive">⚠ {f.porciones} no es válido: {tipoSel?.nombre ?? "este pastel"} admite de {pMin} a {pMax} porciones, de 10 en 10</p>}
             </div>
             <div className="space-y-1"><Label>Sabor del pan</Label><select className={sel} value={f.sabor} onChange={set("sabor")}>{cat.sabores.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
             <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={f.relleno} onChange={set("relleno")}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
@@ -198,6 +220,22 @@ function Cotizador() {
           </div>
         </aside>
       </div>
+
+      <Dialog open={fichaCliente} onOpenChange={setFichaCliente}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nuevo cliente</DialogTitle></DialogHeader>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1 sm:col-span-2"><Label htmlFor="fc-nombre">Nombre *</Label><Input id="fc-nombre" value={ficha.nombre} onChange={(e) => setFicha({ ...ficha, nombre: e.target.value })} /></div>
+            <div className="space-y-1"><Label htmlFor="fc-tel">WhatsApp (10 dígitos)</Label><Input id="fc-tel" value={ficha.telefono} onChange={(e) => setFicha({ ...ficha, telefono: e.target.value })} /></div>
+            <div className="space-y-1"><Label htmlFor="fc-correo">Correo</Label><Input id="fc-correo" type="email" value={ficha.correo} onChange={(e) => setFicha({ ...ficha, correo: e.target.value })} /></div>
+            <div className="space-y-1 sm:col-span-2"><Label htmlFor="fc-tipo">Tipo de cliente</Label>
+              <select id="fc-tipo" className={sel} value={ficha.tipo} onChange={(e) => setFicha({ ...ficha, tipo: e.target.value })}>
+                <option value="particular">Particular</option><option value="empresa">Empresa</option><option value="frecuente">Frecuente</option>
+              </select></div>
+          </div>
+          <DialogFooter><Button onClick={guardarCliente}>Guardar cliente</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={confirmar} onOpenChange={setConfirmar}>
         <DialogContent>
