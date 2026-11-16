@@ -851,6 +851,7 @@ export type Database = {
           nombre: string
           pisos: number
           precio_base: number
+          requiere_montaje: boolean
         }
         Insert: {
           escultorico?: boolean
@@ -860,6 +861,7 @@ export type Database = {
           nombre: string
           pisos?: number
           precio_base: number
+          requiere_montaje?: boolean
         }
         Update: {
           escultorico?: boolean
@@ -869,6 +871,7 @@ export type Database = {
           nombre?: string
           pisos?: number
           precio_base?: number
+          requiere_montaje?: boolean
         }
         Relationships: []
       }
@@ -977,6 +980,10 @@ export type Database = {
         Args: { p_nivel: string; p_tipo: string }
         Returns: number
       }
+      _plazo_porciones: {
+        Args: { p_nivel: string; p_porciones: number }
+        Returns: number
+      }
       _precio: {
         Args: {
           p_cobertura: string
@@ -991,6 +998,10 @@ export type Database = {
       }
       _primera_fecha: {
         Args: { p_nivel: string; p_tipo: string }
+        Returns: string
+      }
+      _primera_fecha_porciones: {
+        Args: { p_nivel: string; p_porciones: number }
         Returns: string
       }
       _puede_tarea: {
@@ -1029,6 +1040,14 @@ export type Database = {
       _usados: {
         Args: { p_dia: string; p_equipo: string; p_excluir: string }
         Returns: number
+      }
+      _validar_entrega: {
+        Args: {
+          p_fecha: string
+          p_modo: Database["public"]["Enums"]["modo_entrega"]
+          p_tipo: string
+        }
+        Returns: undefined
       }
       _validar_pedido: {
         Args: {
@@ -1238,7 +1257,7 @@ export type Database = {
         | "cancelada"
       estado_tarea: "pendiente" | "en_curso" | "hecha"
       metodo_pago: "efectivo" | "transferencia" | "tarjeta"
-      modo_entrega: "sucursal" | "zona" | "montaje"
+      modo_entrega: "sucursal" | "zona1" | "montaje" | "zona2" | "zona3"
       tipo_componente: "sabor" | "relleno" | "cobertura"
     }
     CompositeTypes: {
@@ -1378,7 +1397,7 @@ export const Constants = {
       ],
       estado_tarea: ["pendiente", "en_curso", "hecha"],
       metodo_pago: ["efectivo", "transferencia", "tarjeta"],
-      modo_entrega: ["sucursal", "zona", "montaje"],
+      modo_entrega: ["sucursal", "zona1", "montaje", "zona2", "zona3"],
       tipo_componente: ["sabor", "relleno", "cobertura"],
     },
   },
