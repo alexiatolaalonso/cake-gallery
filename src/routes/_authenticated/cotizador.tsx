@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogoQuery, clientesQuery } from "@/lib/catalogo";
-import { errMsg, fechaHora, mxn } from "@/lib/obrador";
+import { TZ, errMsg, fechaHora, mxn } from "@/lib/obrador";
 import { Pagina, meta } from "@/components/Pagina";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ function Cotizador() {
     if (cat && !f.tipo) setF((x) => ({ ...x, tipo: cat.tipos[0]?.id ?? "", sabor: cat.sabores[0]?.id ?? "", relleno: cat.rellenos[0]?.id ?? "", cobertura: cat.coberturas[0]?.id ?? "", nivel: cat.niveles[0]?.id ?? "" }));
   }, [cat, f.tipo]);
 
-  const fechaISO = useMemo(() => (f.fecha ? new Date(`${f.fecha}T${f.hora}`).toISOString() : null), [f.fecha, f.hora]);
+  const fechaISO = useMemo(() => (f.fecha ? new Date(`${f.fecha}T${f.hora}:00-06:00`).toISOString() : null), [f.fecha, f.hora]);
   const tipoSel = cat?.tipos.find((t) => t.id === f.tipo);
   const pMin = tipoSel?.min_porciones ?? 10, pMax = tipoSel?.max_porciones ?? 10000;
   const porcionesOk = f.porciones >= 10 && f.porciones % 10 === 0 && f.porciones >= pMin && f.porciones <= pMax;
@@ -201,10 +201,10 @@ function Cotizador() {
             <legend className="mb-2 font-display text-lg font-bold">Entrega</legend>
             <div className="space-y-1"><Label>Modo</Label>
               <select className={sel} value={f.modo} onChange={set("modo")}>
-                <option value="sucursal">Recoge en sucursal (10:00–19:00)</option><option value="zona1">Envío Zona 1 (+$90)</option><option value="zona2">Envío Zona 2 (+$160)</option><option value="zona3">Envío Zona 3 (+$260)</option><option value="montaje">Montaje de boda (+$450)</option>
+                <option value="sucursal">Recoge en sucursal (11:15–19:00)</option><option value="zona1">Envío Zona 1 (+$90)</option><option value="zona2">Envío Zona 2 (+$160)</option><option value="zona3">Envío Zona 3 (+$260)</option><option value="montaje">Montaje de boda (+$450)</option>
               </select></div>
             <div className="space-y-1"><Label>Fecha</Label><Input type="date" value={f.fecha} onChange={set("fecha")} /></div>
-            <div className="space-y-1"><Label>Hora</Label><Input type="time" value={f.hora} onChange={set("hora")} /></div>
+            <div className="space-y-1"><Label>Hora</Label><Input type="time" value={f.hora} min={f.modo === "sucursal" ? "11:15" : undefined} max={f.modo === "sucursal" ? "19:00" : undefined} onChange={set("hora")} /></div>
             {f.modo !== "sucursal" && <div className="space-y-1 sm:col-span-3"><Label>Dirección</Label><Input value={f.direccion} onChange={set("direccion")} /></div>}
           </fieldset>
         </div>
@@ -221,7 +221,7 @@ function Cotizador() {
                 <p className="mt-1">Primera fecha posible: <b>{fechaHora(cot.primera_fecha)}</b></p>
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => {
                   const d = new Date(cot.primera_fecha);
-                  setF((x) => ({ ...x, fecha: d.toLocaleDateString("en-CA"), hora: "12:00" }));
+                  setF((x) => ({ ...x, fecha: d.toLocaleDateString("en-CA", { timeZone: TZ }), hora: "12:00" }));
                 }}>Usar esa fecha</Button>
               </div>
             ) : (

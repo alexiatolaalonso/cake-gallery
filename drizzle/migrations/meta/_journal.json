@@ -36,6 +36,13 @@
       "when": 1794854631726,
       "tag": "0004_aviso_etapa_y_verificar_capacidad",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794856072054,
+      "tag": "0005_recogida_desde_1115",
+      "breakpoints": true
     }
   ]
 }
