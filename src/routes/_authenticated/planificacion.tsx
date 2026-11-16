@@ -62,7 +62,7 @@ function Planificacion() {
           </tbody>
         </table>
       </div>
-      <p className="text-sm text-muted-foreground">Con lugar &lt;70% · Justo 70–99% · Saturado ≥100% · Sin capacidad = no admite tareas nuevas salvo autorización con motivo.</p>
+      <p className="text-sm text-muted-foreground">Con lugar hasta 70% · Justo hasta 95% · Saturado más de 95% · Sin capacidad = no admite tareas nuevas salvo autorización con motivo.</p>
       <Dialog open={!!sel} onOpenChange={(v) => !v && setSel(null)}>
         <DialogContent>
           {sel && <>
