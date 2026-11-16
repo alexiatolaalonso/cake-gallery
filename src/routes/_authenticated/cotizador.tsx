@@ -25,7 +25,7 @@ function Cotizador() {
   const { data: clientes = [] } = useQuery(clientesQuery);
   const qc = useQueryClient();
   const nav = useNavigate();
-  const [f, setF] = useState({ cliente: "", tipo: "", porciones: 20, sabor: "", relleno: "", cobertura: "", nivel: "", modo: "sucursal" as "sucursal" | "zona" | "montaje", fecha: "", hora: "16:00", descripcion: "", direccion: "" });
+  const [f, setF] = useState({ cliente: "", tipo: "", porciones: 20, sabor: "", relleno: "", cobertura: "", nivel: "", modo: "sucursal" as "sucursal" | "zona1" | "zona2" | "zona3" | "montaje", fecha: "", hora: "16:00", descripcion: "", direccion: "" });
   const [nuevo, setNuevo] = useState({ nombre: "", telefono: "" });
   const [cot, setCot] = useState<Cot | null>(null);
   const [borradorId, setBorradorId] = useState<string | null>(null);
@@ -146,17 +146,17 @@ function Cotizador() {
           <fieldset className="grid gap-4 sm:grid-cols-2">
             <legend className="mb-2 font-display text-lg font-bold">El pastel</legend>
             <div className="space-y-1"><Label>Tipo de pastel</Label>
-              <select className={sel} value={f.tipo} onChange={set("tipo")}>{cat.tipos.map((t) => <option key={t.id} value={t.id}>{t.nombre} · {mxn(t.precio_base)}/10</option>)}</select>
-              {tipo && <p className="text-xs text-muted-foreground">De {tipo.min_porciones} a {tipo.max_porciones} porciones{tipo.escultorico ? " · Escultórico: +1 día de plazo" : ""}</p>}
+              <select className={sel} value={f.tipo} onChange={set("tipo")}>{cat.tipos.map((t) => <option key={t.id} value={t.id}>{t.nombre} · {mxn(t.precio_base)}/porción</option>)}</select>
+              {tipo && <p className="text-xs text-muted-foreground">De {tipo.min_porciones} a {tipo.max_porciones} porciones{tipo.requiere_montaje ? " · Requiere montaje" : ""}</p>}
             </div>
             <div className="space-y-1"><Label htmlFor="porc">Porciones (múltiplos de 10)</Label>
               <Input id="porc" type="number" step={10} min={10} value={f.porciones} onChange={set("porciones")} aria-invalid={!porcionesOk} />
               {!porcionesOk && <p className="text-xs font-bold text-destructive">⚠ {f.porciones} no es válido: usa 10, 20, 30…</p>}
             </div>
-            <div className="space-y-1"><Label>Sabor del pan</Label><select className={sel} value={f.sabor} onChange={set("sabor")}>{cat.sabores.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/10)` : ""}</option>)}</select></div>
-            <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={f.relleno} onChange={set("relleno")}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/10)` : ""}</option>)}</select></div>
-            <div className="space-y-1"><Label>Cobertura</Label><select className={sel} value={f.cobertura} onChange={set("cobertura")}>{cat.coberturas.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/10)` : ""}</option>)}</select></div>
-            <div className="space-y-1"><Label>Nivel de diseño</Label><select className={sel} value={f.nivel} onChange={set("nivel")}>{cat.niveles.map((x) => <option key={x.id} value={x.id}>{x.nombre} · {x.dias_plazo} días{x.recargo > 0 ? ` (+${mxn(x.recargo)}/10)` : ""}</option>)}</select></div>
+            <div className="space-y-1"><Label>Sabor del pan</Label><select className={sel} value={f.sabor} onChange={set("sabor")}>{cat.sabores.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
+            <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={f.relleno} onChange={set("relleno")}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
+            <div className="space-y-1"><Label>Cobertura</Label><select className={sel} value={f.cobertura} onChange={set("cobertura")}>{cat.coberturas.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
+            <div className="space-y-1"><Label>Nivel de diseño</Label><select className={sel} value={f.nivel} onChange={set("nivel")}>{cat.niveles.map((x) => <option key={x.id} value={x.id}>{x.nombre}{x.dias_plazo > 0 ? ` · +${x.dias_plazo} día de plazo` : ""}{x.recargo > 0 ? ` (+${mxn(x.recargo)}/porción)` : ""}</option>)}</select></div>
             <div className="space-y-1 sm:col-span-2"><Label>Descripción de referencia</Label><Textarea value={f.descripcion} onChange={set("descripcion")} placeholder="Colores, letras, pisos, foto de referencia…" /></div>
           </fieldset>
 
@@ -164,7 +164,7 @@ function Cotizador() {
             <legend className="mb-2 font-display text-lg font-bold">Entrega</legend>
             <div className="space-y-1"><Label>Modo</Label>
               <select className={sel} value={f.modo} onChange={set("modo")}>
-                <option value="sucursal">Recoge en sucursal</option><option value="zona">Envío a zona (+$180)</option><option value="montaje">Montaje en evento (+$450)</option>
+                <option value="sucursal">Recoge en sucursal (10:00–19:00)</option><option value="zona1">Envío Zona 1 (+$90)</option><option value="zona2">Envío Zona 2 (+$160)</option><option value="zona3">Envío Zona 3 (+$260)</option><option value="montaje">Montaje de boda (+$450)</option>
               </select></div>
             <div className="space-y-1"><Label>Fecha</Label><Input type="date" value={f.fecha} onChange={set("fecha")} /></div>
             <div className="space-y-1"><Label>Hora</Label><Input type="time" value={f.hora} onChange={set("hora")} /></div>

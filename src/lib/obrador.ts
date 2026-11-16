@@ -52,10 +52,12 @@ export const estadoOrden: Record<string, { label: string; icon: string }> = {
 
 export const etapaLabel: Record<string, string> = {
   horneado: "Horneado",
-  relleno: "Relleno",
+  relleno: "Relleno y armado",
   cobertura: "Cobertura",
   decoracion: "Decoración",
   entrega: "Entrega",
+  empaque: "Empaque",
+  armado: "Armado",
 };
 
 export function descargarArchivo(nombre: string, contenido: string, tipo: string) {
