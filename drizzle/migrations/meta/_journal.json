@@ -29,6 +29,13 @@
       "when": 1794845354439,
       "tag": "0003_catalogo_real_reglas",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794854631726,
+      "tag": "0004_aviso_etapa_y_verificar_capacidad",
+      "breakpoints": true
     }
   ]
 }

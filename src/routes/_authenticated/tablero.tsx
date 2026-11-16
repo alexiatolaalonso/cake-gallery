@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/tablero")({
   component: Tablero,
 });
 
-type T = { id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string };
+type T = { id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
 const columnas = [
   { k: "pendiente", t: "Pendiente", icon: "○" },
   { k: "en_curso", t: "En curso", icon: "◐" },
@@ -65,9 +65,10 @@ function Tablero() {
                   {t.descripcion && <p className="mt-1 text-base opacity-90">“{t.descripcion}”</p>}
                   <p className="mt-2 text-lg font-bold">{fecha(t.dia)} · {hora(t.inicio)}–{hora(t.fin)} · {t.minutos} min</p>
                   {t.atrasada && <p className="text-lg font-extrabold text-destructive">⚠ ATRASADA ({t.estado === "en_curso" ? "en curso" : "sin iniciar"})</p>}
+                  {t.estado === "pendiente" && t.bloqueo_etapa && <p className="mt-2 rounded bg-gold/20 px-2 py-1 text-lg font-bold">⏳ Espera a: {etapaLabel[t.bloqueo_etapa] ?? t.bloqueo_etapa} #{t.folio} ({t.bloqueo_estado === "en_curso" ? "En curso" : "Pendiente"})</p>}
                   {t.estado !== "hecha" && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button className={`${btn} bg-gold text-accent-foreground`} disabled={t.estado !== "pendiente"} onClick={() => accion("iniciar_tarea", t.id)}>Iniciar</button>
+                      <button className={`${btn} bg-gold text-accent-foreground`} disabled={t.estado !== "pendiente" || !!t.bloqueo_etapa} onClick={() => accion("iniciar_tarea", t.id)}>Iniciar</button>
                       <button className={`${btn} bg-success text-success-foreground`} disabled={t.estado !== "en_curso"} onClick={() => accion("finalizar_tarea", t.id)}>Finalizar</button>
                       <button className={`${btn} bg-pizarra-foreground text-pizarra text-base`} onClick={() => setReg({ t, tipo: "consumo" })}>Registrar consumo</button>
                       <button className={`${btn} bg-destructive text-destructive-foreground text-base`} onClick={() => setReg({ t, tipo: "merma" })}>Registrar merma</button>

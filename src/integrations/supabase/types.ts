@@ -1162,6 +1162,8 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: {
           atrasada: boolean
+          bloqueo_estado: string
+          bloqueo_etapa: string
           cliente: string
           cobertura: string
           descripcion: string
@@ -1244,6 +1246,19 @@ export type Database = {
       rol_en: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
+      }
+      verificar_capacidad: {
+        Args: {
+          p_cobertura: string
+          p_fecha: string
+          p_modo: Database["public"]["Enums"]["modo_entrega"]
+          p_nivel: string
+          p_porciones: number
+          p_relleno: string
+          p_sabor: string
+          p_tipo: string
+        }
+        Returns: Json
       }
     }
     Enums: {

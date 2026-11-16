@@ -32,6 +32,7 @@ function Cotizador() {
   const [confirmar, setConfirmar] = useState(false);
   const [pago, setPago] = useState({ metodo: "efectivo" as "efectivo" | "transferencia" | "tarjeta", monto: 0, clave: "" });
   const [ocupado, setOcupado] = useState(false);
+  const [cap, setCap] = useState<{ ok: boolean; motivo: string | null } | null>(null);
 
   useEffect(() => {
     if (cat && !f.tipo) setF((x) => ({ ...x, tipo: cat.tipos[0]?.id ?? "", sabor: cat.sabores[0]?.id ?? "", relleno: cat.rellenos[0]?.id ?? "", cobertura: cat.coberturas[0]?.id ?? "", nivel: cat.niveles[0]?.id ?? "" }));
@@ -54,6 +55,20 @@ function Cotizador() {
     }, 250);
     return () => clearTimeout(t);
   }, [f.tipo, f.porciones, f.sabor, f.relleno, f.cobertura, f.nivel, f.modo, fechaISO]);
+
+  useEffect(() => {
+    setCap(null);
+    if (!fechaISO || !cot || cot.error || !porcionesOk) return;
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.rpc("verificar_capacidad", {
+        p_tipo: f.tipo, p_porciones: f.porciones, p_sabor: f.sabor, p_relleno: f.relleno, p_cobertura: f.cobertura,
+        p_nivel: f.nivel, p_modo: f.modo, p_fecha: fechaISO,
+      });
+      if (error) setCap({ ok: false, motivo: errMsg(error) });
+      else setCap(data as unknown as { ok: boolean; motivo: string | null });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [cot, fechaISO, porcionesOk, f.tipo, f.porciones, f.sabor, f.relleno, f.cobertura, f.nivel, f.modo]);
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setF((x) => {
@@ -210,12 +225,14 @@ function Cotizador() {
                 }}>Usar esa fecha</Button>
               </div>
             ) : (
-              <p className="rounded-md border border-success bg-success/10 p-3 text-sm font-bold text-success">✓ Fecha dentro del plazo. La capacidad se verifica al confirmar.</p>
+              !cap ? <p className="rounded-md border p-3 text-sm text-muted-foreground">Comprobando capacidad del obrador…</p>
+              : cap.ok ? <p className="rounded-md border border-success bg-success/10 p-3 text-sm font-bold text-success">✓ Hay capacidad: se puede confirmar con anticipo.</p>
+              : <div role="alert" className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm"><p className="font-bold text-destructive">⚠ No se puede confirmar en esa fecha</p><p className="mt-1">{cap.motivo}</p></div>
             ))}
             <div className="grid gap-2">
               <Button variant="outline" onClick={onGuardar} disabled={ocupado || !porcionesOk}>Guardar borrador</Button>
               <Button variant="outline" onClick={compartir} disabled={!cot}>Compartir por WhatsApp</Button>
-              <Button onClick={abrirConfirmar} disabled={ocupado || !porcionesOk || !!cot?.error || !f.fecha}>Confirmar con anticipo</Button>
+              <Button onClick={abrirConfirmar} disabled={ocupado || !porcionesOk || !!cot?.error || !f.fecha || !cap?.ok}>Confirmar con anticipo</Button>
             </div>
           </div>
         </aside>
