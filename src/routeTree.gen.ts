@@ -12,9 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedCobrosRouteImport } from './routes/_authenticated/cobros'
 import { Route as AuthenticatedCotizadorRouteImport } from './routes/_authenticated/cotizador'
+import { Route as AuthenticatedFacturasRouteImport } from './routes/_authenticated/facturas'
+import { Route as AuthenticatedInformesRouteImport } from './routes/_authenticated/informes'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
+import { Route as AuthenticatedInventarioRouteImport } from './routes/_authenticated/inventario'
 import { Route as AuthenticatedOrdenesRouteImport } from './routes/_authenticated/ordenes'
+import { Route as AuthenticatedPlanificacionRouteImport } from './routes/_authenticated/planificacion'
+import { Route as AuthenticatedTableroRouteImport } from './routes/_authenticated/tablero'
 import { Route as AuthenticatedOrdenesIndexRouteImport } from './routes/_authenticated/ordenes.index'
 import { Route as AuthenticatedOrdenesIdRouteImport } from './routes/_authenticated/ordenes.$id'
 
@@ -32,9 +38,24 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCobrosRoute = AuthenticatedCobrosRouteImport.update({
+  id: '/cobros',
+  path: '/cobros',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCotizadorRoute = AuthenticatedCotizadorRouteImport.update({
   id: '/cotizador',
   path: '/cotizador',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFacturasRoute = AuthenticatedFacturasRouteImport.update({
+  id: '/facturas',
+  path: '/facturas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedInformesRoute = AuthenticatedInformesRouteImport.update({
+  id: '/informes',
+  path: '/informes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -42,9 +63,25 @@ const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
   path: '/inicio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInventarioRoute = AuthenticatedInventarioRouteImport.update({
+  id: '/inventario',
+  path: '/inventario',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOrdenesRoute = AuthenticatedOrdenesRouteImport.update({
   id: '/ordenes',
   path: '/ordenes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlanificacionRoute =
+  AuthenticatedPlanificacionRouteImport.update({
+    id: '/planificacion',
+    path: '/planificacion',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedTableroRoute = AuthenticatedTableroRouteImport.update({
+  id: '/tablero',
+  path: '/tablero',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOrdenesIndexRoute =
@@ -62,17 +99,29 @@ const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cobros': typeof AuthenticatedCobrosRoute
   '/cotizador': typeof AuthenticatedCotizadorRoute
+  '/facturas': typeof AuthenticatedFacturasRoute
+  '/informes': typeof AuthenticatedInformesRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/inventario': typeof AuthenticatedInventarioRoute
   '/ordenes': typeof AuthenticatedOrdenesRouteWithChildren
+  '/planificacion': typeof AuthenticatedPlanificacionRoute
+  '/tablero': typeof AuthenticatedTableroRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes/': typeof AuthenticatedOrdenesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/cobros': typeof AuthenticatedCobrosRoute
   '/cotizador': typeof AuthenticatedCotizadorRoute
+  '/facturas': typeof AuthenticatedFacturasRoute
+  '/informes': typeof AuthenticatedInformesRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/inventario': typeof AuthenticatedInventarioRoute
+  '/planificacion': typeof AuthenticatedPlanificacionRoute
+  '/tablero': typeof AuthenticatedTableroRoute
   '/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/ordenes': typeof AuthenticatedOrdenesIndexRoute
 }
@@ -81,9 +130,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/cobros': typeof AuthenticatedCobrosRoute
   '/_authenticated/cotizador': typeof AuthenticatedCotizadorRoute
+  '/_authenticated/facturas': typeof AuthenticatedFacturasRoute
+  '/_authenticated/informes': typeof AuthenticatedInformesRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/inventario': typeof AuthenticatedInventarioRoute
   '/_authenticated/ordenes': typeof AuthenticatedOrdenesRouteWithChildren
+  '/_authenticated/planificacion': typeof AuthenticatedPlanificacionRoute
+  '/_authenticated/tablero': typeof AuthenticatedTableroRoute
   '/_authenticated/ordenes/$id': typeof AuthenticatedOrdenesIdRoute
   '/_authenticated/ordenes/': typeof AuthenticatedOrdenesIndexRoute
 }
@@ -92,21 +147,45 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/cobros'
     | '/cotizador'
+    | '/facturas'
+    | '/informes'
     | '/inicio'
+    | '/inventario'
     | '/ordenes'
+    | '/planificacion'
+    | '/tablero'
     | '/ordenes/$id'
     | '/ordenes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/cotizador' | '/inicio' | '/ordenes/$id' | '/ordenes'
+  to:
+    | '/'
+    | '/auth'
+    | '/cobros'
+    | '/cotizador'
+    | '/facturas'
+    | '/informes'
+    | '/inicio'
+    | '/inventario'
+    | '/planificacion'
+    | '/tablero'
+    | '/ordenes/$id'
+    | '/ordenes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/cobros'
     | '/_authenticated/cotizador'
+    | '/_authenticated/facturas'
+    | '/_authenticated/informes'
     | '/_authenticated/inicio'
+    | '/_authenticated/inventario'
     | '/_authenticated/ordenes'
+    | '/_authenticated/planificacion'
+    | '/_authenticated/tablero'
     | '/_authenticated/ordenes/$id'
     | '/_authenticated/ordenes/'
   fileRoutesById: FileRoutesById
@@ -140,11 +219,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/cobros': {
+      id: '/_authenticated/cobros'
+      path: '/cobros'
+      fullPath: '/cobros'
+      preLoaderRoute: typeof AuthenticatedCobrosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cotizador': {
       id: '/_authenticated/cotizador'
       path: '/cotizador'
       fullPath: '/cotizador'
       preLoaderRoute: typeof AuthenticatedCotizadorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/facturas': {
+      id: '/_authenticated/facturas'
+      path: '/facturas'
+      fullPath: '/facturas'
+      preLoaderRoute: typeof AuthenticatedFacturasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/informes': {
+      id: '/_authenticated/informes'
+      path: '/informes'
+      fullPath: '/informes'
+      preLoaderRoute: typeof AuthenticatedInformesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inicio': {
@@ -154,11 +254,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInicioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inventario': {
+      id: '/_authenticated/inventario'
+      path: '/inventario'
+      fullPath: '/inventario'
+      preLoaderRoute: typeof AuthenticatedInventarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ordenes': {
       id: '/_authenticated/ordenes'
       path: '/ordenes'
       fullPath: '/ordenes'
       preLoaderRoute: typeof AuthenticatedOrdenesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/planificacion': {
+      id: '/_authenticated/planificacion'
+      path: '/planificacion'
+      fullPath: '/planificacion'
+      preLoaderRoute: typeof AuthenticatedPlanificacionRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tablero': {
+      id: '/_authenticated/tablero'
+      path: '/tablero'
+      fullPath: '/tablero'
+      preLoaderRoute: typeof AuthenticatedTableroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ordenes/': {
@@ -192,15 +313,27 @@ const AuthenticatedOrdenesRouteWithChildren =
   AuthenticatedOrdenesRoute._addFileChildren(AuthenticatedOrdenesRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCobrosRoute: typeof AuthenticatedCobrosRoute
   AuthenticatedCotizadorRoute: typeof AuthenticatedCotizadorRoute
+  AuthenticatedFacturasRoute: typeof AuthenticatedFacturasRoute
+  AuthenticatedInformesRoute: typeof AuthenticatedInformesRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedInventarioRoute: typeof AuthenticatedInventarioRoute
   AuthenticatedOrdenesRoute: typeof AuthenticatedOrdenesRouteWithChildren
+  AuthenticatedPlanificacionRoute: typeof AuthenticatedPlanificacionRoute
+  AuthenticatedTableroRoute: typeof AuthenticatedTableroRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCobrosRoute: AuthenticatedCobrosRoute,
   AuthenticatedCotizadorRoute: AuthenticatedCotizadorRoute,
+  AuthenticatedFacturasRoute: AuthenticatedFacturasRoute,
+  AuthenticatedInformesRoute: AuthenticatedInformesRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedInventarioRoute: AuthenticatedInventarioRoute,
   AuthenticatedOrdenesRoute: AuthenticatedOrdenesRouteWithChildren,
+  AuthenticatedPlanificacionRoute: AuthenticatedPlanificacionRoute,
+  AuthenticatedTableroRoute: AuthenticatedTableroRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

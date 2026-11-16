@@ -48,7 +48,7 @@ function Ficha() {
 
   async function rpc(fn: () => PromiseLike<{ data: unknown; error: unknown }>, ok: (d: any) => string) {
     const { data, error } = await fn();
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     toast.success(ok(data));
     setDlg(null);
     refrescar();

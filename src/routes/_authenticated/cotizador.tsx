@@ -114,7 +114,7 @@ function Cotizador() {
     setOcupado(true);
     const { data, error } = await supabase.rpc("confirmar_orden", { p_orden: borradorId!, p_metodo: pago.metodo, p_monto: pago.monto, p_clave: pago.clave });
     setOcupado(false);
-    if (error) return toast.error(errMsg(error));
+    if (error) { toast.error(errMsg(error)); return; }
     const r = data as { folio: number; factura: string };
     toast.success(`Orden #${r.folio} confirmada · factura ${r.factura ?? ""}`);
     qc.invalidateQueries();

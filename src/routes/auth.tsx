@@ -18,7 +18,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const cuentas = [
+const cuentas: [string, string][] = [
   ["Administración", "admin@obrador.test"],
   ["Mostrador", "mostrador@obrador.test"],
   ["Producción", "produccion@obrador.test"],
@@ -36,7 +36,7 @@ function AuthPage() {
     setCargando(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
     setCargando(false);
-    if (error) return toast.error("Correo o contraseña incorrectos");
+    if (error) { toast.error("Correo o contraseña incorrectos"); return; }
     nav({ to: "/inicio", replace: true });
   }
 
