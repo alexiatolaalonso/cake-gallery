@@ -32,7 +32,7 @@ function Catalogo() {
         supabase.from("rellenos").select("*").order("nombre"),
         supabase.from("coberturas").select("*").order("nombre"),
         supabase.from("insumos").select("*").order("nombre"),
-        supabase.from("recetas").select("*"),
+        supabase.from("recetas").select("*").order("id"),
       ]);
       return { sabor: s.data ?? [], relleno: r.data ?? [], cobertura: c.data ?? [], insumos: i.data ?? [], recetas: (rec.data ?? []) as Rec[] };
     },
@@ -90,9 +90,9 @@ function Tarjeta({ comp, tabla, item, insumos, recetas, refrescar }: { comp: Com
   const usados = new Set(recetas.map((r) => r.insumo_id));
   return (
     <article className="space-y-3 rounded-xl border bg-card p-4">
-      <div className="grid gap-2 sm:grid-cols-[1fr_8rem_auto]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_10rem_auto]">
         <Input className="h-11 font-bold" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-        <Input className="h-11" type="number" step="0.01" value={recargo} onChange={(e) => setRecargo(Number(e.target.value))} aria-label="Recargo por porción" />
+        <label className="flex items-center gap-2 text-sm"><span className="shrink-0">Recargo $</span><Input className="h-11" type="number" step="0.01" value={recargo} onChange={(e) => setRecargo(Number(e.target.value))} aria-label="Recargo por porción" /></label>
         <button className="h-11 rounded-md border px-3 font-bold disabled:opacity-40" disabled={!cambiado || !nombre.trim()} onClick={() => run(supabase.from(tabla).update({ nombre: nombre.trim(), recargo }).eq("id", item.id), "Guardado")}>Guardar</button>
       </div>
       <p className="text-sm text-muted-foreground">Recargo {mxn(recargo)} por porción · costo de la receta {mxn(costo)} por 10 porciones</p>
