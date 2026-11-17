@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { catalogoQuery } from "@/lib/catalogo";
 import { descargarArchivo, errMsg, etapaLabel, fechaHora, generarICS, hora, mxn, sesionQuery } from "@/lib/obrador";
 import { EstadoBadge } from "@/components/EstadoBadge";
+import { EnRiesgo } from "@/components/EnRiesgo";
 import { Pagina, meta } from "@/components/Pagina";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +87,7 @@ function Ficha() {
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="space-y-2 rounded-xl border bg-card p-5 lg:col-span-2">
           <div className="flex items-center gap-3"><EstadoBadge estado={o.estado} /><span className="text-sm text-muted-foreground">{o.modo_entrega}{o.direccion ? ` · ${o.direccion}` : ""}</span></div>
+          <EnRiesgo orden={o.id} detalle />
           <h2 className="text-2xl font-bold">{o.tipos_pastel?.nombre} · {o.porciones} porciones</h2>
           <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
             <div><dt className="text-muted-foreground">Sabor</dt><dd className="font-bold">{o.sabores?.nombre}</dd></div>

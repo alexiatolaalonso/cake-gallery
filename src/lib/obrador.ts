@@ -127,3 +127,10 @@ export const pasosEtapa: Record<string, string[]> = {
   decoracion: ["Leer la descripción del diseño del pedido", "Preparar colores y elementos decorativos", "Decorar según el nivel de diseño", "Revisar el acabado final"],
   empaque: ["Colocar el pastel en su base de cartón", "Meterlo en caja y etiquetar con folio y cliente", "Dejarlo en refrigeración listo para entrega"],
 };
+
+export type Riesgo = { orden_id: string; folio: number; insumo: string; falta: number; unidad: string; necesaria_para: string };
+/** Pedidos confirmados cuyo ingrediente no llega a tiempo (también pasa a merma los lotes que vencen hoy). */
+export const riesgoQuery = queryOptions({
+  queryKey: ["en_riesgo"],
+  queryFn: async () => ((await supabase.rpc("ordenes_en_riesgo")).data ?? []) as Riesgo[],
+});

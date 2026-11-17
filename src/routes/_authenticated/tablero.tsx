@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas } from "@/lib/obrador";
 import { meta } from "@/components/Pagina";
+import { EnRiesgo } from "@/components/EnRiesgo";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,7 @@ function Tablero() {
               {col(c.k).map(({ t, etapas, faltan }) => (
                 <article key={t.orden_id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
                   <p className="text-xl font-extrabold">Pedido #{t.folio}</p>
+                  <EnRiesgo orden={t.orden_id} />
                   <ul className="my-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
                     {etapas.map((a) => <li key={a.etapa} className={a.estado === "hecha" ? "text-success font-bold" : a.estado === "en_curso" ? "text-gold font-bold" : "opacity-70"}>{a.estado === "hecha" ? "✓" : a.estado === "en_curso" ? "◐" : "○"} {etapaLabel[a.etapa] ?? a.etapa}</li>)}
                   </ul>

@@ -99,6 +99,13 @@
       "when": 1794938205258,
       "tag": "0013_bloqueo_cambio_con_consumos",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794939581988,
+      "tag": "0014_compras_por_etapa_riesgo_caducidad",
+      "breakpoints": true
     }
   ]
 }

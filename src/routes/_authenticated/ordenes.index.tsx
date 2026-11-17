@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { estadoOrden, fechaHora, mxn } from "@/lib/obrador";
 import { EstadoBadge } from "@/components/EstadoBadge";
+import { EnRiesgo } from "@/components/EnRiesgo";
 import { Pagina, meta } from "@/components/Pagina";
 
 export const Route = createFileRoute("/_authenticated/ordenes/")({
@@ -40,7 +41,7 @@ function Ordenes() {
               <Link to="/ordenes/$id" params={{ id: o.id }} className="block rounded-xl border bg-card p-4 active:bg-muted">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-bold">#{o.folio} · {o.clientes?.nombre}</span>
-                  <EstadoBadge estado={o.estado} />
+                  <span className="flex flex-wrap justify-end gap-1"><EnRiesgo orden={o.id} /><EstadoBadge estado={o.estado} /></span>
                 </div>
                 <p className="mt-1 text-sm">{o.tipos_pastel?.nombre} · {o.porciones} porc. · {o.sabores?.nombre} · {o.niveles_diseno?.nombre}</p>
                 <p className="mt-1 flex justify-between text-sm"><span>{fechaHora(o.fecha_entrega)} <span className="text-muted-foreground">({o.modo_entrega})</span></span><b>{mxn(o.precio)}</b></p>
@@ -60,7 +61,7 @@ function Ordenes() {
                   <td className="px-4 py-2">{o.clientes?.nombre}</td>
                   <td className="px-4 py-2">{o.tipos_pastel?.nombre} · {o.porciones} porc. · {o.sabores?.nombre} · {o.niveles_diseno?.nombre}</td>
                   <td className="px-4 py-2">{fechaHora(o.fecha_entrega)} <span className="text-muted-foreground">({o.modo_entrega})</span></td>
-                  <td className="px-4 py-2"><EstadoBadge estado={o.estado} /></td>
+                  <td className="px-4 py-2"><span className="flex flex-wrap gap-1"><EstadoBadge estado={o.estado} /><EnRiesgo orden={o.id} /></span></td>
                   <td className="px-4 py-2">{mxn(o.precio)}</td>
                 </tr>
               ))}

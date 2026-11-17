@@ -19,6 +19,7 @@ function Inventario() {
     queryKey: ["inventario"],
     queryFn: async () => {
       const hace30 = new Date(Date.now() - 30 * 864e5).toISOString();
+      await supabase.rpc("ordenes_en_riesgo"); // pasa a merma los lotes que vencen hoy
       const [ins, lotes, res, comp, cons, mer] = await Promise.all([
         supabase.from("insumos").select("*").order("nombre"),
         supabase.from("lotes").select("*").gt("disponible", 0).order("caducidad"),
@@ -34,7 +35,7 @@ function Inventario() {
   if (!data) return <p>Cargando…</p>;
   const hoy = new Date().toLocaleDateString("en-CA");
   const nombre = (id: string) => data.ins.find((i) => i.id === id);
-  const vigentes = data.lotes.filter((l) => l.caducidad >= hoy);
+  const vigentes = data.lotes.filter((l) => l.caducidad > hoy);
   const valor = vigentes.reduce((a, l) => a + Number(l.disponible) * Number(l.costo), 0);
   const porCaducar = vigentes.filter((l) => new Date(l.caducidad).getTime() - Date.now() < 7 * 864e5).length;
   const filas = data.ins.map((i) => {
@@ -57,7 +58,7 @@ function Inventario() {
   async function run(p: PromiseLike<{ error: unknown; data?: unknown }>, ok: string) {
     const { error } = await p;
     if (error) { toast.error(errMsg(error)); return; }
-    toast.success(ok); qc.invalidateQueries({ queryKey: ["inventario"] });
+    toast.success(ok); qc.invalidateQueries({ queryKey: ["inventario"] }); qc.invalidateQueries({ queryKey: ["en_riesgo"] });
   }
 
   return (
@@ -131,9 +132,12 @@ function Inventario() {
           <Button className="h-12 w-full sm:w-auto" disabled={!nc.insumo || !nc.cantidad || !nc.fecha} onClick={() => run(supabase.from("compras").insert({ insumo_id: nc.insumo, cantidad: nc.cantidad, fecha_llegada: nc.fecha, costo: nombre(nc.insumo)?.costo ?? 0 }), "Compra registrada")}>Registrar compra en camino</Button>
           <ul className="divide-y text-sm">
             {data.comp.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-2 py-1.5">
+              <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
                 <span className="min-w-0">{nombre(c.insumo_id)?.nombre} · {c.cantidad} {nombre(c.insumo_id)?.unidad} · llega {fecha(c.fecha_llegada)}</span>
-                {c.estado === "en_camino" ? <Button size="sm" variant="outline" onClick={() => run(supabase.rpc("recibir_compra", { p_compra: c.id }), "Compra recibida como lote")}>Recibir</Button> : <span className="text-muted-foreground">✓ {c.estado}</span>}
+                {c.estado === "en_camino" ? <span className="flex shrink-0 items-center gap-1">
+                  <Input type="date" aria-label="Nueva fecha de llegada" className="h-9 w-36" defaultValue={c.fecha_llegada} onBlur={(e) => e.target.value && e.target.value !== c.fecha_llegada && run(supabase.rpc("posponer_compra", { p_compra: c.id, p_fecha: e.target.value }), "Fecha de llegada cambiada")} />
+                  <Button size="sm" variant="outline" onClick={() => run(supabase.rpc("recibir_compra", { p_compra: c.id }), "Compra recibida como lote")}>Recibir</Button>
+                </span> : <span className="text-muted-foreground">✓ {c.estado}</span>}
               </li>
             ))}
           </ul>

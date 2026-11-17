@@ -974,6 +974,14 @@ export type Database = {
           insumo_id: string
         }[]
       }
+      _necesidad_fechas: {
+        Args: { p_orden: string }
+        Returns: {
+          cantidad: number
+          insumo_id: string
+          para: string
+        }[]
+      }
       _nuevo_folio: { Args: never; Returns: number }
       _planificar: { Args: { p_orden: string }; Returns: Json }
       _plazo_dias: {
@@ -1214,6 +1222,21 @@ export type Database = {
           sin_capacidad: boolean
           usados: number
         }[]
+      }
+      ordenes_en_riesgo: {
+        Args: never
+        Returns: {
+          falta: number
+          folio: number
+          insumo: string
+          necesaria_para: string
+          orden_id: string
+          unidad: string
+        }[]
+      }
+      posponer_compra: {
+        Args: { p_compra: string; p_fecha: string }
+        Returns: undefined
       }
       recibir_compra: { Args: { p_compra: string }; Returns: undefined }
       registrar_cobro: {
