@@ -1067,6 +1067,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      avance_pedidos: {
+        Args: { p_ordenes: string[] }
+        Returns: {
+          equipo: string
+          estado: string
+          etapa: string
+          orden_etapa: number
+          orden_id: string
+        }[]
+      }
       caducar_lotes: { Args: never; Returns: number }
       cambiar_orden: {
         Args: {

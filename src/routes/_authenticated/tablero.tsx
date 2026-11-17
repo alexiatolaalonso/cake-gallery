@@ -14,13 +14,15 @@ export const Route = createFileRoute("/_authenticated/tablero")({
   component: Tablero,
 });
 
-type T = { id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; fecha_entrega: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
+type T = { id: string; orden_id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; fecha_entrega: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
 const columnas = [
   { k: "pendiente", t: "Pendiente", icon: "○" },
   { k: "en_curso", t: "En curso", icon: "◐" },
   { k: "hecha", t: "Hecha", icon: "✓" },
   { k: "atrasada", t: "Atrasada", icon: "⚠" },
 ];
+type A = { orden_id: string; etapa: string; orden_etapa: number; estado: string; equipo: string };
+type P = { t: T; etapas: A[]; columna: string; faltan: A[] };
 const btn = "rounded-lg px-4 py-3 text-lg font-extrabold disabled:opacity-40";
 
 function Tablero() {
@@ -33,13 +35,32 @@ function Tablero() {
   });
   const [reg, setReg] = useState<null | { t: T; tipo: "consumo" | "merma" }>(null);
   const [ficha, setFicha] = useState<T | null>(null);
-  const col = (k: string) => data.filter((t) => (k === "atrasada" ? t.atrasada : !t.atrasada && t.estado === k));
+  const ordenes = [...new Set(data.map((t) => t.orden_id))];
+  const { data: avance = [] } = useQuery({
+    queryKey: ["avance", ordenes.join(",")],
+    enabled: ordenes.length > 0,
+    queryFn: async () => ((await supabase.rpc("avance_pedidos", { p_ordenes: ordenes })).data ?? []) as A[],
+    refetchInterval: 30000,
+  });
+  const pedidos: P[] = ordenes.map((oid) => {
+    const mias = data.filter((t) => t.orden_id === oid).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const t = mias.find((x) => x.estado !== "hecha") ?? mias[mias.length - 1]!;
+    const etapas = avance.filter((a) => a.orden_id === oid).sort((a, b) => a.orden_etapa - b.orden_etapa);
+    const lista = etapas.length ? etapas : mias.map((m) => ({ orden_id: oid, etapa: m.etapa, orden_etapa: 0, estado: m.estado, equipo: m.equipo }));
+    const atrasada = mias.some((m) => m.atrasada);
+    const todas = lista.every((a) => a.estado === "hecha");
+    const empezada = lista.some((a) => a.estado !== "pendiente");
+    const columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
+    return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
+  });
+  const col = (k: string) => pedidos.filter((p) => p.columna === k);
 
   async function accion(fn: "iniciar_tarea" | "finalizar_tarea", id: string) {
     const { error } = await supabase.rpc(fn, { p_tarea: id });
     if (error) { toast.error(errMsg(error)); return; }
     toast.success(fn === "iniciar_tarea" ? "Tarea iniciada" : "Tarea finalizada");
     qc.invalidateQueries({ queryKey: ["tablero"] });
+    qc.invalidateQueries({ queryKey: ["avance"] });
   }
 
   return (
@@ -57,9 +78,14 @@ function Tablero() {
           <section key={c.k} className={`rounded-xl border-2 p-3 ${c.k === "atrasada" ? "border-destructive" : "border-pizarra-line"}`}>
             <h2 className="mb-3 flex items-center gap-2 text-2xl font-bold"><span aria-hidden>{c.icon}</span>{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></h2>
             <div className="space-y-3">
-              {col(c.k).map((t) => (
-                <article key={t.id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
-                  <p className="text-sm uppercase tracking-widest opacity-80">#{t.folio} · {etapaLabel[t.etapa]} · {t.equipo}</p>
+              {col(c.k).map(({ t, etapas, faltan }) => (
+                <article key={t.orden_id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
+                  <p className="text-xl font-extrabold">Pedido #{t.folio}</p>
+                  <ul className="my-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+                    {etapas.map((a) => <li key={a.etapa} className={a.estado === "hecha" ? "text-success font-bold" : a.estado === "en_curso" ? "text-gold font-bold" : "opacity-70"}>{a.estado === "hecha" ? "✓" : a.estado === "en_curso" ? "◐" : "○"} {etapaLabel[a.etapa] ?? a.etapa}</li>)}
+                  </ul>
+                  {faltan.length > 0 && <p className="mb-2 text-base font-bold">Falta: {faltan.map((a) => etapaLabel[a.etapa] ?? a.etapa).join(", ")}</p>}
+                  <p className="text-sm uppercase tracking-widest opacity-80">{t.estado === "hecha" ? "Última" : "Siguiente"} etapa: {etapaLabel[t.etapa]} · {t.equipo}</p>
                   <p className="text-2xl font-extrabold leading-tight">{t.porciones} porc. {t.tipo}</p>
                   <p className="text-xl">{t.sabor} / {t.relleno}</p>
                   <p className="text-xl">{t.cobertura} · {t.diseno}</p>
