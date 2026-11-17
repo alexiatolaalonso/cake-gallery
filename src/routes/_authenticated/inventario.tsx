@@ -69,7 +69,23 @@ function Inventario() {
         <div className="rounded-xl border bg-card p-4"><p className="text-sm text-muted-foreground">Ingredientes que faltan</p><p className={`text-2xl font-bold ${faltantes ? "text-destructive" : ""}`}>{faltantes}</p></div>
         <div className="rounded-xl border bg-card p-4"><p className="text-sm text-muted-foreground">Últimos 30 días</p><p className="text-lg font-bold">Consumo {mxn(costoCons)}</p><p className="text-sm text-destructive">Merma {mxn(costoMer)}</p></div>
       </div>
-      <section className="overflow-x-auto rounded-xl border bg-card">
+      <ul className="space-y-2 md:hidden">
+        {filas.map(({ i, disp, resv, cam, libre, estado }) => (
+          <li key={i.id} className="rounded-xl border bg-card p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate font-bold">{i.nombre}</span>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${estado === "Falta" ? "bg-destructive text-destructive-foreground" : estado === "Bajo" ? "bg-gold/20 text-gold" : "bg-secondary"}`}>{estado}</span>
+            </div>
+            <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
+              <div><dt className="text-xs text-muted-foreground">Disponible</dt><dd>{disp.toFixed(2)} {i.unidad}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Reservado</dt><dd>{resv.toFixed(2)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Libre</dt><dd className={`font-bold ${libre < 0 ? "text-destructive" : ""}`}>{libre.toFixed(2)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">En camino</dt><dd>{cam ? cam.toFixed(2) : "—"}</dd></div>
+              <div className="col-span-2"><dt className="text-xs text-muted-foreground">Costo</dt><dd>{mxn(i.costo)}/{i.unidad}</dd></div>
+            </dl>
+          </li>))}
+      </ul>
+      <section className="hidden overflow-x-auto rounded-xl border bg-card md:block">
         <table className="w-full min-w-max text-sm">
           <thead className="bg-secondary text-left"><tr>{["Insumo", "Estado", "Disponible", "Reservado", "Libre", "En camino", "Costo"].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr></thead>
           <tbody>{filas.map(({ i, disp, resv, cam, libre, estado }) => (
@@ -84,7 +100,7 @@ function Inventario() {
       <section className="rounded-xl border bg-card p-4">
         <h2 className="mb-2 text-xl font-bold">Últimos movimientos</h2>
         {movs.length === 0 ? <p className="text-sm text-muted-foreground">Sin movimientos en los últimos 30 días.</p> : (
-          <ul className="max-h-[360px] divide-y overflow-auto text-sm">
+          <ul className="divide-y text-sm lg:max-h-[360px] lg:overflow-auto">
             {movs.map((m, k) => (
               <li key={k} className="flex flex-wrap justify-between gap-2 py-1.5">
                 <span><b className={m.tipo === "Merma" ? "text-destructive" : ""}>{m.tipo}</b> · {nombre(m.insumo_id)?.nombre}{m.folio ? ` · #${m.folio}` : ""}{m.motivo ? ` · ${m.motivo}` : ""}</span>
@@ -95,9 +111,9 @@ function Inventario() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border bg-card p-4">
           <h2 className="mb-2 text-xl font-bold">Lotes</h2>
-          <ul className="max-h-[480px] divide-y overflow-auto text-sm">
+          <ul className="divide-y text-sm lg:max-h-[480px] lg:overflow-auto">
             {data.lotes.map((l) => { const v = l.caducidad < hoy; const prox = !v && (new Date(l.caducidad).getTime() - Date.now()) < 7 * 864e5; return (
-              <li key={l.id} className="flex justify-between gap-2 py-1.5">
+              <li key={l.id} className="flex flex-wrap justify-between gap-x-2 py-1.5">
                 <span>{nombre(l.insumo_id)?.nombre} · <span className="text-muted-foreground">{l.codigo}</span></span>
                 <span>{Number(l.disponible).toFixed(2)} {nombre(l.insumo_id)?.unidad} · <b className={v ? "text-destructive" : prox ? "text-gold" : ""}>{v ? "⊘ Caducado " : prox ? "◑ Caduca " : ""}{fecha(l.caducidad)}</b></span>
               </li>); })}
@@ -105,18 +121,18 @@ function Inventario() {
         </section>
         <section className="space-y-3 rounded-xl border bg-card p-4">
           <h2 className="text-xl font-bold">Compras</h2>
-          <div className="grid gap-2 sm:grid-cols-4">
-            <select className="h-10 rounded-md border bg-card px-2 text-sm sm:col-span-2" value={nc.insumo} onChange={(e) => setNc({ ...nc, insumo: e.target.value })}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <select className="col-span-2 h-12 rounded-md border bg-card px-2 text-base" value={nc.insumo} onChange={(e) => setNc({ ...nc, insumo: e.target.value })}>
               <option value="">Insumo…</option>{data.ins.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}
             </select>
             <Input type="number" placeholder="Cantidad" value={nc.cantidad || ""} onChange={(e) => setNc({ ...nc, cantidad: Number(e.target.value) })} />
             <Input type="date" value={nc.fecha} onChange={(e) => setNc({ ...nc, fecha: e.target.value })} />
           </div>
-          <Button disabled={!nc.insumo || !nc.cantidad || !nc.fecha} onClick={() => run(supabase.from("compras").insert({ insumo_id: nc.insumo, cantidad: nc.cantidad, fecha_llegada: nc.fecha, costo: nombre(nc.insumo)?.costo ?? 0 }), "Compra registrada")}>Registrar compra en camino</Button>
+          <Button className="h-12 w-full sm:w-auto" disabled={!nc.insumo || !nc.cantidad || !nc.fecha} onClick={() => run(supabase.from("compras").insert({ insumo_id: nc.insumo, cantidad: nc.cantidad, fecha_llegada: nc.fecha, costo: nombre(nc.insumo)?.costo ?? 0 }), "Compra registrada")}>Registrar compra en camino</Button>
           <ul className="divide-y text-sm">
             {data.comp.map((c) => (
-              <li key={c.id} className="flex items-center justify-between py-1.5">
-                <span>{nombre(c.insumo_id)?.nombre} · {c.cantidad} {nombre(c.insumo_id)?.unidad} · llega {fecha(c.fecha_llegada)}</span>
+              <li key={c.id} className="flex items-center justify-between gap-2 py-1.5">
+                <span className="min-w-0">{nombre(c.insumo_id)?.nombre} · {c.cantidad} {nombre(c.insumo_id)?.unidad} · llega {fecha(c.fecha_llegada)}</span>
                 {c.estado === "en_camino" ? <Button size="sm" variant="outline" onClick={() => run(supabase.rpc("recibir_compra", { p_compra: c.id }), "Compra recibida como lote")}>Recibir</Button> : <span className="text-muted-foreground">✓ {c.estado}</span>}
               </li>
             ))}
