@@ -51,6 +51,7 @@ const TRADUCCIONES: [RegExp, string][] = [
   [/numeric field overflow/i, "El número escrito es demasiado grande."],
   [/value too long for type character/i, "El texto escrito es demasiado largo."],
   [/duplicate key value violates unique constraint/i, "Ese dato ya existe en el sistema."],
+  [/is still referenced from table/i, "Hay datos ya registrados que dependen de esto, así que no se puede borrar."],
   [/violates foreign key constraint/i, "Falta un dato obligatorio o ya no existe."],
   [/violates check constraint/i, "El valor no cumple una regla del sistema."],
   [/violates not-null constraint|null value in column/i, "Falta un dato obligatorio."],
@@ -62,8 +63,10 @@ const TRADUCCIONES: [RegExp, string][] = [
 ];
 
 export function errMsg(e: unknown) {
-  const msg = e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : String(e);
-  for (const [patron, enEspanol] of TRADUCCIONES) if (patron.test(msg)) return enEspanol;
+  const o = e && typeof e === "object" ? (e as { message?: unknown; details?: unknown }) : null;
+  const msg = o && typeof o.message === "string" ? o.message : String(e);
+  const detalles = o && typeof o.details === "string" ? `${msg} ${o.details}` : msg;
+  for (const [patron, enEspanol] of TRADUCCIONES) if (patron.test(detalles)) return enEspanol;
   return msg;
 }
 

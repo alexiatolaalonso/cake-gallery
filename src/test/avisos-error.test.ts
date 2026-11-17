@@ -19,4 +19,25 @@ describe("Avisos de error en español", () => {
     const aviso = "Las porciones van de 10 en 10 (10, 20, 30…). 25 no es válido";
     expect(errMsg({ message: aviso })).toBe(aviso);
   });
+
+  it("explica en español que algo no se puede borrar porque tiene consumos encima", () => {
+    expect(
+      errMsg({
+        code: "23503",
+        message:
+          'update or delete on table "tareas" violates foreign key constraint "consumos_tarea_id_fkey" on table "consumos"',
+        details: 'Key (id)=(6ec699ae-0fa4-480c-bca5-c5aa8e20c2fd) is still referenced from table "consumos".',
+      }),
+    ).toBe("Hay datos ya registrados que dependen de esto, así que no se puede borrar.");
+  });
+
+  it("avisa en español cuando falta un dato obligatorio", () => {
+    expect(
+      errMsg({
+        code: "23503",
+        message: 'insert or update on table "tareas" violates foreign key constraint "tareas_equipo_id_fkey"',
+        details: "Key (equipo_id)=(11111111-1111-1111-1111-111111111111) is not present in table \"equipos\".",
+      }),
+    ).toBe("Falta un dato obligatorio o ya no existe.");
+  });
 });
