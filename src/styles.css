@@ -29,6 +29,8 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-entregada: var(--entregada);
+  --color-entregada-foreground: var(--entregada-foreground);
   --color-gold: var(--gold);
   --color-pizarra: var(--pizarra);
   --color-pizarra-foreground: var(--pizarra-foreground);
@@ -68,6 +70,9 @@
   --destructive-foreground: oklch(0.98 0.01 70);
   --success: oklch(0.52 0.08 170);
   --success-foreground: oklch(0.98 0.01 70);
+  /* entregadas: verde #2E7D6B */
+  --entregada: oklch(0.536 0.0821 175.29);
+  --entregada-foreground: oklch(0.98 0.01 70);
   --pizarra: oklch(0.25 0.035 30);
   --pizarra-foreground: oklch(0.948 0.022 70);
   --pizarra-line: oklch(0.36 0.04 30);

@@ -6,7 +6,7 @@ const tono: Record<string, string> = {
   confirmada: "bg-secondary text-secondary-foreground border-gold",
   en_produccion: "bg-accent text-accent-foreground border-accent",
   lista: "bg-success text-success-foreground border-success",
-  entregada: "bg-primary text-primary-foreground border-primary",
+  entregada: "bg-entregada text-entregada-foreground border-entregada",
   cancelada: "bg-destructive text-destructive-foreground border-destructive",
 };
 
