@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas } from "@/lib/obrador";
+import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas, sesionQuery } from "@/lib/obrador";
 import { meta } from "@/components/Pagina";
 import { EnRiesgo } from "@/components/EnRiesgo";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +31,16 @@ function Tablero() {
   const [dias, setDias] = useState(3);
   const [abiertas, setAbiertas] = useState<Record<string, boolean>>({ en_curso: true, atrasada: true });
   const [filtroEtapa, setFiltroEtapa] = useState<string | null>(null);
+  const { data: sesion } = useQuery(sesionQuery);
+  const { data: miEtapa } = useQuery({
+    queryKey: ["mi_equipo_etapa"],
+    queryFn: async () => {
+      const { data: eq } = await supabase.rpc("mi_equipo");
+      if (!eq) return null;
+      return (await supabase.from("equipos").select("etapa").eq("id", eq).maybeSingle()).data?.etapa ?? null;
+    },
+  });
+  const verEtapas = sesion?.rol === "administracion" || miEtapa === "decoracion";
   const { data = [] } = useQuery({
     queryKey: ["tablero", dias],
     queryFn: async () => ((await supabase.rpc("mis_tareas", { p_desde: hoyISO(-2), p_hasta: hoyISO(dias) })).data ?? []) as T[],
@@ -57,7 +67,7 @@ function Tablero() {
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
   });
   const col = (k: string) => pedidos.filter((p) => p.columna === k);
-  const visibles = (k: string) => col(k).filter((p) => k !== "en_curso" || !filtroEtapa || p.t.etapa === filtroEtapa);
+  const visibles = (k: string) => col(k).filter((p) => k !== "en_curso" || !verEtapas || !filtroEtapa || p.t.etapa === filtroEtapa);
 
   async function accion(fn: "iniciar_tarea" | "finalizar_tarea", id: string) {
     const { error } = await supabase.rpc(fn, { p_tarea: id });
@@ -86,7 +96,7 @@ function Tablero() {
                 <span aria-hidden className="shrink-0 text-xl">{abiertas[c.k] ? "▲" : "▼"}</span>
               </button>
             </h2>
-            {abiertas[c.k] && c.k === "en_curso" && (
+            {abiertas[c.k] && c.k === "en_curso" && verEtapas && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {[null, "cobertura", "decoracion", "empaque"].map((e) => {
                   const n = col("en_curso").filter((p) => !e || p.t.etapa === e).length;
@@ -95,7 +105,7 @@ function Tablero() {
               </div>
             )}
             {abiertas[c.k] && <div className="mt-3 space-y-3">
-              {c.k === "en_curso" && visibles(c.k).length === 0 && <p className="opacity-70">No hay pedidos en esta etapa.</p>}
+              {c.k === "en_curso" && verEtapas && visibles(c.k).length === 0 && <p className="opacity-70">No hay pedidos en esta etapa.</p>}
               {visibles(c.k).map(({ t, etapas, faltan }) => (
                 <article key={t.orden_id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
                   <p className="text-xl font-extrabold">Pedido #{t.folio}</p>

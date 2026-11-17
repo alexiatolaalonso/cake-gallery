@@ -1,1 +1,2 @@
 - [ ] Pizarra móvil: columnas Pendiente/En curso/Hecha/Atrasada desplegables; en En curso botones Cobertura/Decoración/Empaque
+- [ ] Botones de etapa en En curso solo para Equipo Decoración y Administración
