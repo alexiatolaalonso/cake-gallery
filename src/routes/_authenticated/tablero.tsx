@@ -55,7 +55,15 @@ function Tablero() {
     const atrasada = mias.some((m) => m.atrasada);
     const todas = lista.every((a) => a.estado === "hecha");
     const empezada = lista.some((a) => a.estado !== "pendiente");
-    const columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
+    let columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
+    if (sesion?.rol === "equipo") {
+      // Un equipo ve el pedido según SUS etapas; al terminarlas pasa a Hecha y desaparece cuando el siguiente equipo empieza.
+      const mias_hechas = mias.every((m) => m.estado === "hecha");
+      const ultimaMia = Math.max(...lista.filter((a) => mias.some((m) => m.etapa === a.etapa)).map((a) => a.orden_etapa), 0);
+      const siguienteEmpezo = lista.some((a) => a.orden_etapa > ultimaMia && a.estado !== "pendiente");
+      if (mias_hechas && siguienteEmpezo) columna = "oculto";
+      else columna = mias.some((m) => m.atrasada) ? "atrasada" : mias_hechas ? "hecha" : mias.some((m) => m.estado !== "pendiente") ? "en_curso" : "pendiente";
+    }
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
   });
   // El rol Equipo no puede leer la tabla de equipos (tiene costos): se reconoce a Decoración por sus propias tareas.
