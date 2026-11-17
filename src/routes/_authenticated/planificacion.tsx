@@ -41,8 +41,9 @@ function Planificacion() {
   return (
     <Pagina titulo="Planificación por capacidad" sub="Minutos ocupados / disponibles por día y equipo"
       acciones={<><Button variant="outline" onClick={() => setInicio(inicio - 7)}>← Semana</Button><Button variant="outline" onClick={() => setInicio(0)}>Hoy</Button><Button variant="outline" onClick={() => setInicio(inicio + 7)}>Semana →</Button></>}>
+      <p className="text-sm text-muted-foreground md:hidden">Desliza la tabla hacia los lados para ver todos los días →</p>
       <div className="overflow-x-auto rounded-xl border bg-card">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-max text-sm">
           <thead><tr className="bg-secondary"><th className="px-3 py-2 text-left">Equipo</th>{fechas.map((f) => <th key={f} className="px-2 py-2 text-center whitespace-nowrap">{fecha(f)}</th>)}</tr></thead>
           <tbody>
             {equipos.map(([id, nombre]) => (

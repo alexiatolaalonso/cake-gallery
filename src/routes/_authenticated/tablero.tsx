@@ -51,7 +51,7 @@ function Tablero() {
           </select>
         </label>
       </div>
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {columnas.map((c) => (
           <section key={c.k} className={`rounded-xl border-2 p-3 ${c.k === "atrasada" ? "border-destructive" : "border-pizarra-line"}`}>
             <h2 className="mb-3 flex items-center gap-2 text-2xl font-bold"><span aria-hidden>{c.icon}</span>{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></h2>

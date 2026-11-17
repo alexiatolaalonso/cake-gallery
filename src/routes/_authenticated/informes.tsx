@@ -40,10 +40,10 @@ function Informes() {
 
   const Bloque = ({ t, filas, nombre }: { t: string; filas: Record<string, unknown>[]; nombre: string }) => (
     <section className="rounded-xl border bg-card p-4">
-      <div className="mb-2 flex items-center justify-between"><h2 className="text-xl font-bold">{t}</h2>
-        <Button size="sm" variant="outline" onClick={() => descargarArchivo(`${nombre}.csv`, aCSV(filas), "text/csv")}>Exportar CSV</Button></div>
-      <table className="w-full text-sm"><thead><tr>{Object.keys(filas[0] ?? {}).map((k) => <th key={k} className="border-b py-1 text-left capitalize">{k.replace(/_/g, " ")}</th>)}</tr></thead>
-        <tbody>{filas.map((f, i) => <tr key={i} className="border-b">{Object.entries(f).map(([k, v]) => <td key={k} className="py-1">{typeof v === "number" && /total|precio|costo|margen/.test(k) ? mxn(v) : String(v ?? "")}</td>)}</tr>)}</tbody></table>
+      <div className="mb-2 flex items-center justify-between gap-2"><h2 className="text-xl font-bold">{t}</h2>
+        <Button size="sm" variant="outline" className="shrink-0" onClick={() => descargarArchivo(`${nombre}.csv`, aCSV(filas), "text/csv")}>Exportar CSV</Button></div>
+      <div className="overflow-x-auto"><table className="w-full min-w-max text-sm"><thead><tr>{Object.keys(filas[0] ?? {}).map((k) => <th key={k} className="border-b py-1 pr-3 text-left capitalize">{k.replace(/_/g, " ")}</th>)}</tr></thead>
+        <tbody>{filas.map((f, i) => <tr key={i} className="border-b">{Object.entries(f).map(([k, v]) => <td key={k} className="py-1 pr-3">{typeof v === "number" && /total|precio|costo|margen/.test(k) ? mxn(v) : String(v ?? "")}</td>)}</tr>)}</tbody></table></div>
     </section>
   );
 

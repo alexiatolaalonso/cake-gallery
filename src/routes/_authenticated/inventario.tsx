@@ -42,7 +42,7 @@ function Inventario() {
     <Pagina titulo="Inventario y compras" sub="Se consume primero el lote de caducidad más próxima"
       acciones={<Button variant="outline" onClick={() => run(supabase.rpc("caducar_lotes"), "Lotes caducados pasados a merma")}>Pasar caducados a merma</Button>}>
       <section className="overflow-x-auto rounded-xl border bg-card">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-max text-sm">
           <thead className="bg-secondary text-left"><tr>{["Insumo", "Disponible", "Reservado", "Libre", "En camino", "Costo"].map((h) => <th key={h} className="px-3 py-2">{h}</th>)}</tr></thead>
           <tbody>{data.ins.map((i) => {
             const disp = data.lotes.filter((l) => l.insumo_id === i.id && l.caducidad >= hoy).reduce((a, l) => a + Number(l.disponible), 0);

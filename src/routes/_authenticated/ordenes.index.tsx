@@ -32,8 +32,25 @@ function Ordenes() {
           </button>
         ))}
       </div>
-      {isLoading ? <p>Cargando…</p> : (
-        <div className="overflow-x-auto rounded-xl border bg-card">
+      {isLoading ? <p>Cargando…</p> : (<>
+        {/* Móvil: tarjetas apiladas con todo visible sin desplazar */}
+        <ul className="space-y-3 md:hidden">
+          {data.map((o) => (
+            <li key={o.id}>
+              <Link to="/ordenes/$id" params={{ id: o.id }} className="block rounded-xl border bg-card p-4 active:bg-muted">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold">#{o.folio} · {o.clientes?.nombre}</span>
+                  <EstadoBadge estado={o.estado} />
+                </div>
+                <p className="mt-1 text-sm">{o.tipos_pastel?.nombre} · {o.porciones} porc. · {o.sabores?.nombre} · {o.niveles_diseno?.nombre}</p>
+                <p className="mt-1 flex justify-between text-sm"><span>{fechaHora(o.fecha_entrega)} <span className="text-muted-foreground">({o.modo_entrega})</span></span><b>{mxn(o.precio)}</b></p>
+              </Link>
+            </li>
+          ))}
+          {!data.length && <li className="rounded-xl border bg-card px-4 py-8 text-center text-muted-foreground">Sin órdenes en este estado</li>}
+        </ul>
+        {/* Escritorio: tabla */}
+        <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
           <table className="w-full text-sm">
             <thead className="bg-secondary text-left"><tr>{["Folio", "Cliente", "Pastel", "Entrega", "Estado", "Precio"].map((h) => <th key={h} className="px-4 py-2">{h}</th>)}</tr></thead>
             <tbody>
@@ -51,7 +68,7 @@ function Ordenes() {
             </tbody>
           </table>
         </div>
-      )}
+      </>)}
     </Pagina>
   );
 }

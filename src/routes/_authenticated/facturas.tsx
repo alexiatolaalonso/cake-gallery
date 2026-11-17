@@ -34,9 +34,9 @@ function Facturas() {
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <ul className="no-print divide-y rounded-xl border bg-card">
           {data.map((x) => (
-            <li key={x.id}><button onClick={() => setAbierta(x.id)} className={`flex w-full justify-between px-4 py-2 text-left text-sm hover:bg-muted ${abierta === x.id ? "bg-secondary" : ""}`}>
+            <li key={x.id}><button onClick={() => setAbierta(x.id)} className={`flex w-full flex-col gap-0.5 px-4 py-2 text-left text-sm hover:bg-muted sm:flex-row sm:justify-between ${abierta === x.id ? "bg-secondary" : ""}`}>
               <span><b>{x.folio}</b> · #{x.ordenes?.folio} {x.ordenes?.clientes?.nombre}</span>
-              <span>{x.estado === "pagada" ? "✓ Pagada" : x.estado === "cancelada" ? "✕ Cancelada" : "○ Emitida"} · {mxn(x.total)}</span>
+              <span className="shrink-0">{x.estado === "pagada" ? "✓ Pagada" : x.estado === "cancelada" ? "✕ Cancelada" : "○ Emitida"} · {mxn(x.total)}</span>
             </button></li>
           ))}
         </ul>

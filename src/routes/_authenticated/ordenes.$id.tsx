@@ -97,7 +97,7 @@ function Ficha() {
       </div>
       <section className="rounded-xl border bg-card p-5">
         <h3 className="mb-3 text-lg font-bold">Tareas (planificadas hacia atrás)</h3>
-        <ol className="grid gap-2 sm:grid-cols-5">
+        <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {tareas.map((t) => (
             <li key={t.id} className="rounded-lg border p-3 text-sm">
               <p className="font-bold">{t.orden_etapa}. {etapaLabel[t.etapa]}</p>
