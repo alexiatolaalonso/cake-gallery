@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { aCSV, descargarArchivo, hoyISO, mxn } from "@/lib/obrador";
 import { Pagina, meta } from "@/components/Pagina";
 import { Button } from "@/components/ui/button";
+import { RangoFechas, useRango, limites, enRango } from "@/components/RangoFechas";
 
 export const Route = createFileRoute("/_authenticated/informes")({
   head: () => meta("Informes", "Ventas, ocupación, merma y rentabilidad"),
@@ -17,16 +18,28 @@ function agrupar<T>(xs: T[], k: (x: T) => string, v: (x: T) => number) {
 }
 
 function Informes() {
+  const [rango, setRango] = useRango();
+  const ocDesde = rango.desde || hoyISO(0);
+  const tope = new Date(new Date(ocDesde + "T12:00:00Z").getTime() + 30 * 86400000).toISOString().slice(0, 10);
+  const ocHasta = rango.hasta ? (rango.hasta < tope ? rango.hasta : tope) : rango.desde ? tope : hoyISO(13);
   const { data } = useQuery({
-    queryKey: ["informes"],
+    queryKey: ["informes", rango],
+    placeholderData: (prev) => prev,
     queryFn: async () => {
-      const [o, m, r, oc] = await Promise.all([
-        supabase.from("ordenes").select("precio, estado, sabores(nombre), niveles_diseno(nombre)").not("estado", "in", "(borrador,cancelada)"),
-        supabase.from("movimientos_merma").select("motivo, costo, cantidad"),
+      const { ini, fin } = limites(rango);
+      let qo = supabase.from("ordenes").select("id, precio, estado, fecha_entrega, sabores(nombre), niveles_diseno(nombre)").not("estado", "in", "(borrador,cancelada)");
+      let qm = supabase.from("movimientos_merma").select("motivo, costo, cantidad, creado");
+      if (ini) { qo = qo.gte("fecha_entrega", ini); qm = qm.gte("creado", ini); }
+      if (fin) { qo = qo.lte("fecha_entrega", fin); qm = qm.lte("creado", fin); }
+      const [o, m, r, oc, fe] = await Promise.all([
+        qo, qm,
         supabase.rpc("rentabilidad"),
-        supabase.rpc("ocupacion", { p_desde: hoyISO(0), p_hasta: hoyISO(13) }),
+        supabase.rpc("ocupacion", { p_desde: ocDesde, p_hasta: ocHasta }),
+        supabase.from("ordenes").select("id, fecha_entrega"),
       ]);
-      return { ordenes: o.data ?? [], merma: m.data ?? [], rent: r.data ?? [], ocup: oc.data ?? [] };
+      const fechas = new Map((fe.data ?? []).map((x) => [x.id, x.fecha_entrega]));
+      const rent = (r.data ?? []).filter((x) => enRango(fechas.get(x.orden_id), rango) || (!rango.desde && !rango.hasta));
+      return { ordenes: o.data ?? [], merma: m.data ?? [], rent, ocup: oc.data ?? [] };
     },
   });
   if (!data) return <p>Cargando…</p>;
@@ -49,10 +62,11 @@ function Informes() {
 
   return (
     <Pagina titulo="Informes" sub="Costo real = insumos a costo de lote + merma + minutos × costo por minuto">
+      <RangoFechas valor={rango} cambiar={setRango} />
       <div className="grid gap-6 lg:grid-cols-2">
         <Bloque t="Ventas por sabor" nombre="ventas-sabor" filas={porSabor.map((x) => ({ sabor: x.clave, total: x.total }))} />
         <Bloque t="Ventas por diseño" nombre="ventas-diseno" filas={porDiseno.map((x) => ({ diseno: x.clave, total: x.total }))} />
-        <Bloque t="Ocupación próximos 14 días" nombre="ocupacion" filas={ocup} />
+        <Bloque t={`Ocupación ${ocDesde} a ${ocHasta}`} nombre="ocupacion" filas={ocup} />
         <Bloque t="Merma por motivo" nombre="merma" filas={merma.map((x) => ({ motivo: x.clave, costo: x.total }))} />
       </div>
       <Bloque t="Rentabilidad por orden" nombre="rentabilidad" filas={data.rent.map((r) => ({ folio: r.folio, cliente: r.cliente, estado: r.estado, precio: Number(r.precio), costo_insumos: Number(r.costo_insumos), costo_merma: Number(r.costo_merma), costo_minutos: Number(r.costo_minutos), costo_total: Number(r.costo_total), margen: Number(r.margen) }))} />

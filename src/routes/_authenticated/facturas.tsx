@@ -7,6 +7,7 @@ import { Pagina, meta } from "@/components/Pagina";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { RangoFechas, useRango, limites } from "@/components/RangoFechas";
 
 export const Route = createFileRoute("/_authenticated/facturas")({
   head: () => meta("Facturación interna", "Facturas internas con folio correlativo"),
@@ -15,10 +16,19 @@ export const Route = createFileRoute("/_authenticated/facturas")({
 
 function Facturas() {
   const qc = useQueryClient();
+  const [rango, setRango] = useRango();
   const { data = [] } = useQuery({
-    queryKey: ["facturas"],
-    queryFn: async () => (await supabase.from("facturas_internas").select("*, factura_renglones(*), ordenes(folio, clientes(nombre))").order("numero", { ascending: false })).data ?? [],
+    queryKey: ["facturas", rango],
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      const { ini, fin } = limites(rango);
+      let q = supabase.from("facturas_internas").select("*, factura_renglones(*), ordenes(folio, clientes(nombre))");
+      if (ini) q = q.gte("emitida", ini);
+      if (fin) q = q.lte("emitida", fin);
+      return (await q.order("numero", { ascending: false })).data ?? [];
+    },
   });
+  const suma = (e?: string) => data.filter((x) => !e || x.estado === e).reduce((a, x) => a + Number(x.total), 0);
   const [abierta, setAbierta] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
   const f = data.find((x) => x.id === abierta);
@@ -31,6 +41,12 @@ function Facturas() {
 
   return (
     <Pagina titulo="Facturación interna" sub="Folio FI correlativo, sin huecos · no se borran, se cancelan">
+      <RangoFechas valor={rango} cambiar={setRango} />
+      <div className="no-print grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[["Facturas", String(data.length)], ["Emitido", mxn(suma() - suma("cancelada"))], ["Pagado", mxn(suma("pagada"))], ["Cancelado", mxn(suma("cancelada"))]].map(([t, v]) => (
+          <div key={t} className="rounded-xl border bg-card p-3"><p className="text-sm text-muted-foreground">{t}</p><p className="font-display text-2xl font-bold">{v}</p></div>
+        ))}
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <ul className="no-print divide-y rounded-xl border bg-card">
           {data.map((x) => (
@@ -39,6 +55,7 @@ function Facturas() {
               <span className="shrink-0">{x.estado === "pagada" ? "✓ Pagada" : x.estado === "cancelada" ? "✕ Cancelada" : "○ Emitida"} · {mxn(x.total)}</span>
             </button></li>
           ))}
+          {!data.length && <li className="px-4 py-3 text-sm text-muted-foreground">Sin facturas en estas fechas</li>}
         </ul>
         {f ? (
           <article className="rounded-xl border bg-card p-6">
