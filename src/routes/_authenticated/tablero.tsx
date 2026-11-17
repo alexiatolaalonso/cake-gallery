@@ -32,15 +32,7 @@ function Tablero() {
   const [abiertas, setAbiertas] = useState<Record<string, boolean>>({ en_curso: true, atrasada: true });
   const [filtroEtapa, setFiltroEtapa] = useState<string | null>(null);
   const { data: sesion } = useQuery(sesionQuery);
-  const { data: miEtapa } = useQuery({
-    queryKey: ["mi_equipo_etapa"],
-    queryFn: async () => {
-      const { data: eq } = await supabase.rpc("mi_equipo");
-      if (!eq) return null;
-      return (await supabase.from("equipos").select("etapa").eq("id", eq).maybeSingle()).data?.etapa ?? null;
-    },
-  });
-  const verEtapas = sesion?.rol === "administracion" || miEtapa === "decoracion";
+
   const { data = [] } = useQuery({
     queryKey: ["tablero", dias],
     queryFn: async () => ((await supabase.rpc("mis_tareas", { p_desde: hoyISO(-2), p_hasta: hoyISO(dias) })).data ?? []) as T[],
@@ -66,6 +58,8 @@ function Tablero() {
     const columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
   });
+  // El rol Equipo no puede leer la tabla de equipos (tiene costos): se reconoce a Decoración por sus propias tareas.
+  const verEtapas = sesion?.rol === "administracion" || (sesion?.rol === "equipo" && data.some((t) => t.equipo.includes("Decoración")));
   const col = (k: string) => pedidos.filter((p) => p.columna === k);
   const visibles = (k: string) => col(k).filter((p) => k !== "en_curso" || !verEtapas || !filtroEtapa || p.t.etapa === filtroEtapa);
 
