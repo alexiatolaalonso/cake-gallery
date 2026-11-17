@@ -74,6 +74,11 @@ function Ficha() {
   const activo = ["confirmada", "en_produccion", "lista"].includes(o.estado);
   return (
     <Pagina titulo={`Orden #${o.folio}`} sub={`${o.clientes?.nombre} · entrega ${fechaHora(o.fecha_entrega)}`}
+      volver={
+        <Link to="/ordenes" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-input bg-card px-4 text-sm font-bold hover:bg-muted sm:w-auto sm:justify-start">
+          <span aria-hidden="true">←</span> Volver a órdenes
+        </Link>
+      }
       acciones={<>
         <Button variant="outline" onClick={ics}>Descargar .ics</Button>
         {puedeCaja && o.estado === "borrador" && <Button onClick={() => { setForm({ ...form, metodo: "efectivo", monto: Math.round(Number(o.precio) * 50) / 100, clave: crypto.randomUUID() }); setDlg("confirmar"); }}>Confirmar con anticipo</Button>}
