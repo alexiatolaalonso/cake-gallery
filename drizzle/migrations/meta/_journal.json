@@ -85,6 +85,13 @@
       "when": 1794937663424,
       "tag": "0011_tipos_cliente_particular_salon",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794938071170,
+      "tag": "0012_avisos_cambio_porciones_espanol",
+      "breakpoints": true
     }
   ]
 }

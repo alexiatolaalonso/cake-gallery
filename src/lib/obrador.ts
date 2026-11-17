@@ -44,9 +44,27 @@ export const hoyISO = (offset = 0) => {
   return d.toLocaleDateString("en-CA", { timeZone: TZ });
 };
 
+const TRADUCCIONES: [RegExp, string][] = [
+  [/invalid input syntax for type (integer|bigint|numeric)/i, "Ese valor debe ser un número entero, sin decimales ni letras."],
+  [/invalid input syntax for type uuid/i, "Alguna opción seleccionada ya no es válida. Vuelve a elegirla."],
+  [/invalid input syntax for type (date|timestamp|time)/i, "La fecha o la hora escrita no es válida. Usá el calendario."],
+  [/numeric field overflow/i, "El número escrito es demasiado grande."],
+  [/value too long for type character/i, "El texto escrito es demasiado largo."],
+  [/duplicate key value violates unique constraint/i, "Ese dato ya existe en el sistema."],
+  [/violates foreign key constraint/i, "Falta un dato obligatorio o ya no existe."],
+  [/violates check constraint/i, "El valor no cumple una regla del sistema."],
+  [/violates not-null constraint|null value in column/i, "Falta un dato obligatorio."],
+  [/permission denied/i, "No tenés permiso para hacer esto."],
+  [/row-level security/i, "No tenés permiso para ver o modificar estos datos."],
+  [/could not find the function|function .* does not exist/i, "Esta acción ya no está disponible. Recargá la página."],
+  [/(failed to fetch|networkerror|fetch failed|json object request failed)/i, "No hay conexión con el servidor. Revisá el internet e intentá de nuevo."],
+  [/(timeout|timed out)/i, "El servidor tardó demasiado en responder. Intentá de nuevo."],
+];
+
 export function errMsg(e: unknown) {
-  if (e && typeof e === "object" && "message" in e) return String((e as { message: string }).message);
-  return String(e);
+  const msg = e && typeof e === "object" && "message" in e ? String((e as { message: string }).message) : String(e);
+  for (const [patron, enEspanol] of TRADUCCIONES) if (patron.test(msg)) return enEspanol;
+  return msg;
 }
 
 export const estadoOrden: Record<string, { label: string; icon: string }> = {

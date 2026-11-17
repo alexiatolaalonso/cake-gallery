@@ -29,7 +29,7 @@ function Ficha() {
     queryKey: ["orden", id],
     queryFn: async () => {
       const [o, t, c, f] = await Promise.all([
-        supabase.from("ordenes").select("*, clientes(*), tipos_pastel(nombre), sabores(nombre), rellenos(nombre), coberturas(nombre), niveles_diseno(nombre)").eq("id", id).single(),
+        supabase.from("ordenes").select("*, clientes(*), tipos_pastel(nombre, min_porciones, max_porciones), sabores(nombre), rellenos(nombre), coberturas(nombre), niveles_diseno(nombre)").eq("id", id).single(),
         supabase.from("tareas").select("*, equipos(nombre)").eq("orden_id", id).order("orden_etapa"),
         supabase.from("cobros").select("*").eq("orden_id", id).order("creado"),
         supabase.from("facturas_internas").select("id, folio, estado, total").eq("orden_id", id),
@@ -45,6 +45,17 @@ function Ficha() {
   const pagado = cobros.reduce((a, c) => a + Number(c.monto), 0);
   const saldo = Number(o.precio) - pagado;
   const refrescar = () => qc.invalidateQueries();
+
+  const tipo = o.tipos_pastel;
+  const avisoPorciones = (() => {
+    const p = form.porciones;
+    if (p === 0) return "Escribí las porciones (de 10 en 10).";
+    if (!Number.isInteger(p)) return "Las porciones deben ser un número entero, sin decimales.";
+    if (p < 10 || p % 10 !== 0) return "Las porciones van de 10 en 10 (10, 20, 30…).";
+    if (tipo?.min_porciones != null && tipo?.max_porciones != null && (p < tipo.min_porciones || p > tipo.max_porciones))
+      return `${tipo.nombre ?? "Este pastel"} admite de ${tipo.min_porciones} a ${tipo.max_porciones} porciones.`;
+    return "";
+  })();
 
   async function rpc(fn: () => PromiseLike<{ data: unknown; error: unknown }>, ok: (d: any) => string) {
     const { data, error } = await fn();
@@ -120,12 +131,15 @@ function Ficha() {
             <DialogHeader><DialogTitle>Cambiar porciones o sabor</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">Recalcula tareas, insumos y factura. Rechazado si ya empezó Decoración. Recargo 15% si faltan menos de 3 días.</p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1"><Label>Porciones</Label><Input type="number" step={10} value={form.porciones} onChange={(e) => setForm({ ...form, porciones: Number(e.target.value) })} /></div>
+              <div className="space-y-1"><Label htmlFor="cambio-porciones">Porciones</Label>
+                <Input id="cambio-porciones" type="number" step={10} min={tipo?.min_porciones ?? 10} max={tipo?.max_porciones ?? 120} value={form.porciones} aria-invalid={!!avisoPorciones} onChange={(e) => setForm({ ...form, porciones: Number(e.target.value) })} />
+                {avisoPorciones && <p className="text-xs font-bold text-destructive">⚠ {avisoPorciones}</p>}
+              </div>
               <div className="space-y-1"><Label>Sabor</Label><select className={sel} value={form.sabor} onChange={(e) => setForm({ ...form, sabor: e.target.value })}>{cat.sabores.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
               <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={form.relleno} onChange={(e) => setForm({ ...form, relleno: e.target.value })}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
               <div className="space-y-1"><Label>Cobertura</Label><select className={sel} value={form.cobertura} onChange={(e) => setForm({ ...form, cobertura: e.target.value })}>{cat.coberturas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
             </div>
-            <DialogFooter><Button onClick={() => rpc(() => supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura }), (d) => `Nuevo total ${mxn(d.precio)}${d.recargo > 0 ? " (con recargo 15%)" : ""}`)}>Aplicar cambio</Button></DialogFooter>
+            <DialogFooter><Button disabled={!!avisoPorciones} onClick={() => rpc(() => supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura }), (d) => `Nuevo total ${mxn(d.precio)}${d.recargo > 0 ? " (con recargo 15%)" : ""}`)}>Aplicar cambio</Button></DialogFooter>
           </>}
           {dlg === "cobro" && <>
             <DialogHeader><DialogTitle>Cobrar saldo</DialogTitle></DialogHeader>
