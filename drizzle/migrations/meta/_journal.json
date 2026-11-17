@@ -43,6 +43,13 @@
       "when": 1794856072054,
       "tag": "0005_recogida_desde_1115",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794927951916,
+      "tag": "0006_consumo_por_receta",
+      "breakpoints": true
     }
   ]
 }

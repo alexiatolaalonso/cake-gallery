@@ -1219,6 +1219,7 @@ export type Database = {
         Args: { p_cantidad: number; p_insumo: string; p_tarea: string }
         Returns: Json
       }
+      registrar_consumo_receta: { Args: { p_tarea: string }; Returns: Json }
       registrar_merma: {
         Args: {
           p_cantidad: number

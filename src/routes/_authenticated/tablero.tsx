@@ -90,26 +90,41 @@ function Registro({ t, tipo, cerrar }: { t: T; tipo: "consumo" | "merma"; cerrar
   const [insumo, setInsumo] = useState("");
   const [cant, setCant] = useState(0);
   const [motivo, setMotivo] = useState("");
+  const [enviando, setEnviando] = useState(false);
   async function guardar() {
+    setEnviando(true);
     const { error } = tipo === "consumo"
-      ? await supabase.rpc("registrar_consumo", { p_tarea: t.id, p_insumo: insumo, p_cantidad: cant })
+      ? await supabase.rpc("registrar_consumo_receta", { p_tarea: t.id })
       : await supabase.rpc("registrar_merma", { p_tarea: t.id, p_insumo: insumo, p_cantidad: cant, p_motivo: motivo });
+    setEnviando(false);
     if (error) { toast.error(errMsg(error)); return; }
-    toast.success(tipo === "consumo" ? "Consumo registrado (lote de caducidad más próxima)" : "Merma registrada");
+    toast.success(tipo === "consumo" ? "Consumo de la receta descontado del inventario" : "Merma registrada");
     cerrar();
   }
+  const receta = ins.filter((i) => Number(i.previsto) > 0);
   return (
     <Dialog open onOpenChange={(v) => !v && cerrar()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{tipo === "consumo" ? "Registrar consumo" : "Registrar merma"} · #{t.folio} {etapaLabel[t.etapa]}</DialogTitle></DialogHeader>
-        <div className="space-y-1"><Label>Insumo</Label>
-          <select className="h-12 w-full rounded-md border bg-card px-3 text-lg" value={insumo} onChange={(e) => setInsumo(e.target.value)}>
-            <option value="">— Elige —</option>
-            {ins.map((i) => <option key={i.insumo_id} value={i.insumo_id}>{i.nombre} (previsto {i.previsto} {i.unidad})</option>)}
-          </select></div>
-        <div className="space-y-1"><Label>Cantidad</Label><Input className="h-12 text-lg" type="number" step="0.001" value={cant} onChange={(e) => setCant(Number(e.target.value))} /></div>
-        {tipo === "merma" && <div className="space-y-1"><Label>Motivo</Label><Input className="h-12 text-lg" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="quemado, caída, error de receta…" /></div>}
-        <DialogFooter><button className={`${btn} bg-primary text-primary-foreground`} disabled={!insumo || cant <= 0} onClick={guardar}>Guardar</button></DialogFooter>
+        <DialogHeader><DialogTitle>{tipo === "consumo" ? "Registrar consumo de la receta" : "Registrar merma"} · #{t.folio} {etapaLabel[t.etapa]}</DialogTitle></DialogHeader>
+        {tipo === "consumo" ? (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Se descontará del inventario todo lo de la receta para {t.porciones} porciones:</p>
+            {receta.length === 0 ? <p>Esta etapa no tiene receta.</p> : (
+              <ul className="divide-y rounded-md border text-sm">
+                {receta.map((i) => <li key={i.insumo_id} className="flex justify-between px-3 py-2"><span>{i.nombre}</span><b>{Number(i.previsto).toFixed(3)} {i.unidad}</b></li>)}
+              </ul>
+            )}
+          </div>
+        ) : (<>
+          <div className="space-y-1"><Label>Insumo</Label>
+            <select className="h-12 w-full rounded-md border bg-card px-3 text-lg" value={insumo} onChange={(e) => setInsumo(e.target.value)}>
+              <option value="">— Elige —</option>
+              {ins.map((i) => <option key={i.insumo_id} value={i.insumo_id}>{i.nombre} (previsto {i.previsto} {i.unidad})</option>)}
+            </select></div>
+          <div className="space-y-1"><Label>Cantidad</Label><Input className="h-12 text-lg" type="number" step="0.001" value={cant} onChange={(e) => setCant(Number(e.target.value))} /></div>
+          <div className="space-y-1"><Label>Motivo</Label><Input className="h-12 text-lg" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="quemado, caída, error de receta…" /></div>
+        </>)}
+        <DialogFooter><button className={`${btn} bg-primary text-primary-foreground`} disabled={enviando || (tipo === "consumo" ? receta.length === 0 : !insumo || cant <= 0)} onClick={guardar}>{tipo === "consumo" ? "Descontar receta" : "Guardar"}</button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
