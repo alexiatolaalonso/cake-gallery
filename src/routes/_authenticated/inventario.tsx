@@ -48,7 +48,7 @@ function Inventario() {
   const faltantes = filas.filter((f) => f.estado === "Falta").length;
   const costoCons = data.cons.reduce((a, c) => a + Number(c.costo), 0);
   const costoMer = data.mer.reduce((a, c) => a + Number(c.costo), 0);
-  type Mov = { tipo: string; insumo_id: string; cantidad: number; costo: number; creado: string; folio?: number; motivo?: string };
+  type Mov = { tipo: string; insumo_id: string; cantidad: number; costo: number; creado: string; folio?: number | undefined; motivo?: string | undefined };
   const movs: Mov[] = [
     ...data.cons.map((c) => ({ tipo: "Consumo", insumo_id: c.insumo_id, cantidad: Number(c.cantidad), costo: Number(c.costo), creado: c.creado, folio: (c.ordenes as { folio: number } | null)?.folio })),
     ...data.mer.map((c) => ({ tipo: "Merma", insumo_id: c.insumo_id, cantidad: Number(c.cantidad), costo: Number(c.costo), creado: c.creado, folio: (c.ordenes as { folio: number } | null)?.folio, motivo: c.motivo })),
