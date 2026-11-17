@@ -1,4 +1,4 @@
-- [ ] Pizarra móvil: columnas Pendiente/En curso/Hecha/Atrasada desplegables; en En curso botones Cobertura/Decoración/Empaque
-- [ ] Botones de etapa en En curso solo para Equipo Decoración y Administración
-- [ ] Armado: pedido pasa a Hecha al acabar su etapa y desaparece cuando Decoración inicia
-- [ ] Repartir pedidos de ejemplo en días actuales y dejar alguno atrasado
+- [x] Pizarra móvil: columnas Pendiente/En curso/Hecha/Atrasada desplegables; en En curso botones Cobertura/Decoración/Empaque
+- [x] Botones de etapa en En curso solo para Equipo Decoración y Administración
+- [x] Armado: pedido pasa a Hecha al acabar su etapa y desaparece cuando Decoración inicia
+- [x] Repartir pedidos de ejemplo en días actuales y dejar alguno atrasado
