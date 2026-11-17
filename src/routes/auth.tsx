@@ -47,7 +47,7 @@ function AuthPage() {
   return (
     <main className="grid min-h-screen md:grid-cols-2">
       <section className="pizarra hidden flex-col justify-between p-12 md:flex">
-        <p className="text-sm uppercase tracking-[0.3em] text-gold">Cake Gallery</p>
+        <p className="text-sm uppercase tracking-[0.3em] text-gold">CAKE GALLERY</p>
         <div>
           <h1 className="text-5xl font-bold leading-tight">
             Cada pastel,
