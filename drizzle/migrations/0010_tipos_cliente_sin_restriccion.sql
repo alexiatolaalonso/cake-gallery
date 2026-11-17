@@ -1,0 +1,1 @@
+ALTER TABLE public.clientes DROP CONSTRAINT clientes_tipo_check;

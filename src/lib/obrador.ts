@@ -11,6 +11,14 @@ export const rolLabel: Record<Rol, string> = {
   equipo: "Equipo",
 };
 
+export const TIPOS_CLIENTE = [
+  { valor: "particular", nombre: "Particular" },
+  { valor: "salon", nombre: "Salón" },
+] as const;
+
+export const etiquetaTipoCliente = (t?: string | null) =>
+  TIPOS_CLIENTE.find((x) => x.valor === t)?.nombre ?? t ?? "";
+
 export const sesionQuery = queryOptions({
   queryKey: ["sesion"],
   queryFn: async () => {

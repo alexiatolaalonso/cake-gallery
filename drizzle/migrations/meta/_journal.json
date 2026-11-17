@@ -71,6 +71,20 @@
       "when": 1794936479365,
       "tag": "0009_avance_pedidos",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794937657145,
+      "tag": "0010_tipos_cliente_sin_restriccion",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794937663424,
+      "tag": "0011_tipos_cliente_particular_salon",
+      "breakpoints": true
     }
   ]
 }

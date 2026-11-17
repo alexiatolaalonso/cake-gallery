@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogoQuery, clientesQuery } from "@/lib/catalogo";
-import { TZ, errMsg, fechaHora, mxn } from "@/lib/obrador";
+import { TZ, errMsg, fechaHora, mxn, TIPOS_CLIENTE, etiquetaTipoCliente } from "@/lib/obrador";
 import { Pagina, meta } from "@/components/Pagina";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -171,7 +171,7 @@ function Cotizador() {
                 <Button type="button" size="sm" variant="outline" onClick={() => setFichaCliente(true)}>+ Nuevo cliente</Button></div>
               <select className={sel} value={f.cliente} onChange={set("cliente")}>
                 <option value="">— Nuevo cliente —</option>
-                {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre} ({c.tipo})</option>)}
+                {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre} ({etiquetaTipoCliente(c.tipo)})</option>)}
               </select>
             </div>
             {!f.cliente && (<>
@@ -247,7 +247,7 @@ function Cotizador() {
             <div className="space-y-1"><Label htmlFor="fc-correo">Correo</Label><Input id="fc-correo" type="email" value={ficha.correo} onChange={(e) => setFicha({ ...ficha, correo: e.target.value })} /></div>
             <div className="space-y-1 sm:col-span-2"><Label htmlFor="fc-tipo">Tipo de cliente</Label>
               <select id="fc-tipo" className={sel} value={ficha.tipo} onChange={(e) => setFicha({ ...ficha, tipo: e.target.value })}>
-                <option value="particular">Particular</option><option value="empresa">Empresa</option><option value="frecuente">Frecuente</option>
+                {TIPOS_CLIENTE.map((t) => <option key={t.valor} value={t.valor}>{t.nombre}</option>)}
               </select></div>
           </div>
           <DialogFooter><Button onClick={guardarCliente}>Guardar cliente</Button></DialogFooter>

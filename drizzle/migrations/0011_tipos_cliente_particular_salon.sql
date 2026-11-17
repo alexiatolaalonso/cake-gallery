@@ -1,0 +1,1 @@
+ALTER TABLE public.clientes ADD CONSTRAINT clientes_tipo_check CHECK (tipo IN ('particular','salon'));
