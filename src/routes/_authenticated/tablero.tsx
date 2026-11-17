@@ -48,7 +48,8 @@ function Tablero() {
     refetchInterval: 30000,
   });
   const pedidos: P[] = ordenes.map((oid) => {
-    const mias = data.filter((t) => t.orden_id === oid).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    const mias = data.filter((t) => t.orden_id === oid && (sesion?.rol !== "produccion" || t.etapa === "horneado")).sort((a, b) => a.inicio.localeCompare(b.inicio));
+    if (mias.length === 0) return null;
     const t = mias.find((x) => x.estado !== "hecha") ?? mias[mias.length - 1]!;
     const etapas = avance.filter((a) => a.orden_id === oid).sort((a, b) => a.orden_etapa - b.orden_etapa);
     const lista = etapas.length ? etapas : mias.map((m) => ({ orden_id: oid, etapa: m.etapa, orden_etapa: 0, estado: m.estado, equipo: m.equipo }));
@@ -56,7 +57,7 @@ function Tablero() {
     const todas = lista.every((a) => a.estado === "hecha");
     const empezada = lista.some((a) => a.estado !== "pendiente");
     let columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
-    if (sesion?.rol === "equipo") {
+    if (sesion?.rol === "equipo" || sesion?.rol === "produccion") {
       // Un equipo ve el pedido según SUS etapas; al terminarlas pasa a Hecha y desaparece cuando el siguiente equipo empieza.
       const mias_hechas = mias.every((m) => m.estado === "hecha");
       const ultimaMia = Math.max(...lista.filter((a) => mias.some((m) => m.etapa === a.etapa)).map((a) => a.orden_etapa), 0);
@@ -65,7 +66,7 @@ function Tablero() {
       else columna = mias.some((m) => m.atrasada) ? "atrasada" : mias_hechas ? "hecha" : mias.some((m) => m.estado !== "pendiente") ? "en_curso" : "pendiente";
     }
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
-  });
+  }).filter((p): p is P => p !== null);
   // El rol Equipo no puede leer la tabla de equipos (tiene costos): se reconoce a Decoración por sus propias tareas.
   const verEtapas = sesion?.rol === "administracion" || (sesion?.rol === "equipo" && data.some((t) => t.equipo.includes("Decoración")));
   const col = (k: string) => pedidos.filter((p) => p.columna === k);
