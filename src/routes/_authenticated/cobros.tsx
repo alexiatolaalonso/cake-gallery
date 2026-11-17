@@ -25,10 +25,11 @@ function Cobros() {
   const saldos = data.ordenes.map((o) => ({ ...o, saldo: Number(o.precio) - o.cobros.reduce((a, c) => a + Number(c.monto), 0) })).filter((o) => o.saldo > 0.005);
   return (
     <Pagina titulo="Cobros" sub="Efectivo, transferencia y tarjeta · anticipo 50% y saldo">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {(["efectivo", "transferencia", "tarjeta"] as const).map((m) => (
           <div key={m} className="rounded-xl border bg-card p-4"><p className="text-sm capitalize text-muted-foreground">{m}</p><p className="font-display text-3xl font-bold">{mxn(tot(m))}</p></div>
         ))}
+        <div className="rounded-xl border-2 border-primary bg-card p-4"><p className="text-sm text-muted-foreground">Total cobrado</p><p className="font-display text-3xl font-bold">{mxn(tot("efectivo") + tot("transferencia") + tot("tarjeta"))}</p></div>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border bg-card p-4">
