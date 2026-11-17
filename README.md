@@ -9,6 +9,7 @@ Cada pastel es una orden: cotización → anticipo → tareas planificadas hacia
 | Mostrador | mostrador@obrador.test |
 | Producción | produccion@obrador.test |
 | Equipo (Decoración) | equipo@obrador.test |
+| Equipo (Armado) | armado@obrador.test |
 
 El rol se asigna en la base de datos (`handle_new_user` → `user_roles`), nunca desde el cliente. El registro público está desactivado.
 

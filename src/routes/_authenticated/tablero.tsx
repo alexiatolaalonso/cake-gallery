@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { errMsg, etapaLabel, fecha, hora, hoyISO } from "@/lib/obrador";
+import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas } from "@/lib/obrador";
 import { meta } from "@/components/Pagina";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/tablero")({
   component: Tablero,
 });
 
-type T = { id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
+type T = { id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; fecha_entrega: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
 const columnas = [
   { k: "pendiente", t: "Pendiente", icon: "○" },
   { k: "en_curso", t: "En curso", icon: "◐" },
@@ -32,6 +32,7 @@ function Tablero() {
     refetchInterval: 30000,
   });
   const [reg, setReg] = useState<null | { t: T; tipo: "consumo" | "merma" }>(null);
+  const [ficha, setFicha] = useState<T | null>(null);
   const col = (k: string) => data.filter((t) => (k === "atrasada" ? t.atrasada : !t.atrasada && t.estado === k));
 
   async function accion(fn: "iniciar_tarea" | "finalizar_tarea", id: string) {
@@ -66,6 +67,7 @@ function Tablero() {
                   <p className="mt-2 text-lg font-bold">{fecha(t.dia)} · {hora(t.inicio)}–{hora(t.fin)} · {t.minutos} min</p>
                   {t.atrasada && <p className="text-lg font-extrabold text-destructive">⚠ ATRASADA ({t.estado === "en_curso" ? "en curso" : "sin iniciar"})</p>}
                   {t.estado === "pendiente" && t.bloqueo_etapa && <p className="mt-2 rounded bg-gold/20 px-2 py-1 text-lg font-bold">⏳ Espera a: {etapaLabel[t.bloqueo_etapa] ?? t.bloqueo_etapa} #{t.folio} ({t.bloqueo_estado === "en_curso" ? "En curso" : "Pendiente"})</p>}
+                  <button className={`${btn} mt-3 w-full border-2 border-pizarra-foreground/40 text-base`} onClick={() => setFicha(t)}>📋 Ver ficha</button>
                   {t.estado !== "hecha" && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button className={`${btn} bg-gold text-accent-foreground`} disabled={t.estado !== "pendiente" || !!t.bloqueo_etapa} onClick={() => accion("iniciar_tarea", t.id)}>Iniciar</button>
@@ -80,6 +82,7 @@ function Tablero() {
           </section>
         ))}
       </div>
+      {ficha && <Ficha t={ficha} cerrar={() => setFicha(null)} accion={(fn) => { accion(fn, ficha.id); setFicha(null); }} consumo={() => { setReg({ t: ficha, tipo: "consumo" }); setFicha(null); }} />}
       {reg && <Registro t={reg.t} tipo={reg.tipo} cerrar={() => setReg(null)} />}
     </div>
   );
@@ -125,6 +128,55 @@ function Registro({ t, tipo, cerrar }: { t: T; tipo: "consumo" | "merma"; cerrar
           <div className="space-y-1"><Label>Motivo</Label><Input className="h-12 text-lg" value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="quemado, caída, error de receta…" /></div>
         </>)}
         <DialogFooter><button className={`${btn} bg-primary text-primary-foreground`} disabled={enviando || (tipo === "consumo" ? receta.length === 0 : !insumo || cant <= 0)} onClick={guardar}>{tipo === "consumo" ? "Descontar receta" : "Guardar"}</button></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Ficha({ t, cerrar, accion, consumo }: { t: T; cerrar: () => void; accion: (fn: "iniciar_tarea" | "finalizar_tarea") => void; consumo: () => void }) {
+  const { data: ins = [] } = useQuery({ queryKey: ["insumos_tarea", t.id], queryFn: async () => (await supabase.rpc("insumos_tarea", { p_tarea: t.id })).data ?? [] });
+  const etapa = t.etapa === "armado" ? "relleno" : t.etapa;
+  const i = secuenciaEtapas.indexOf(etapa);
+  const antes = i > 0 ? secuenciaEtapas[i - 1] : null;
+  const despues = i >= 0 && i < secuenciaEtapas.length - 1 ? secuenciaEtapas[i + 1] : null;
+  const receta = ins.filter((x) => Number(x.previsto) > 0);
+  const compReceta = etapa === "horneado" ? `sabor ${t.sabor}` : etapa === "relleno" ? `relleno ${t.relleno}` : etapa === "cobertura" ? `cobertura ${t.cobertura}` : null;
+  return (
+    <Dialog open onOpenChange={(v) => !v && cerrar()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Ficha #{t.folio} · {etapaLabel[t.etapa] ?? t.etapa}</DialogTitle></DialogHeader>
+        <section className="space-y-1 text-sm">
+          <h3 className="text-base font-bold">Pedido</h3>
+          <p><b>{t.porciones} porciones</b> · {t.tipo}</p>
+          <p>Cliente: {t.cliente}</p>
+          <p>Sabor: {t.sabor} · Relleno: {t.relleno}</p>
+          <p>Cobertura: {t.cobertura} · Diseño: {t.diseno}</p>
+          {t.descripcion && <p className="italic">“{t.descripcion}”</p>}
+          <p>Tarea: {fecha(t.dia)} {hora(t.inicio)}–{hora(t.fin)} ({t.minutos} min)</p>
+          <p>Entrega: <b>{fechaHora(t.fecha_entrega)}</b></p>
+        </section>
+        <section className="space-y-1 text-sm">
+          <h3 className="text-base font-bold">Ingredientes{compReceta ? ` · receta de ${compReceta}` : ""}</h3>
+          {receta.length === 0 ? <p className="text-muted-foreground">Esta etapa no usa receta.</p> : (
+            <ul className="divide-y rounded-md border">
+              {receta.map((x) => <li key={x.insumo_id} className="flex justify-between gap-2 px-3 py-1.5"><span>{x.nombre}</span><b>{Number(x.previsto).toFixed(3)} {x.unidad}</b></li>)}
+            </ul>)}
+        </section>
+        <section className="space-y-1 text-sm">
+          <h3 className="text-base font-bold">Proceso</h3>
+          <ol className="list-decimal space-y-1 pl-5">{(pasosEtapa[t.etapa] ?? []).map((p) => <li key={p}>{p}</li>)}</ol>
+        </section>
+        <section className="grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-md border p-2"><p className="text-xs text-muted-foreground">Viene de</p><p className="font-bold">{antes ? etapaLabel[antes] : "Inicio"}</p>
+            {antes && <p className="text-xs">{t.bloqueo_etapa ? `⏳ ${t.bloqueo_estado === "en_curso" ? "En curso" : "Pendiente"}` : "✓ Hecho"}</p>}</div>
+          <div className="rounded-md border p-2"><p className="text-xs text-muted-foreground">Pasa a</p><p className="font-bold">{despues ? etapaLabel[despues] : "Entrega"}</p></div>
+        </section>
+        {t.estado !== "hecha" && (
+          <div className="grid grid-cols-2 gap-2">
+            <button className={`${btn} bg-gold text-accent-foreground`} disabled={t.estado !== "pendiente" || !!t.bloqueo_etapa} onClick={() => accion("iniciar_tarea")}>Iniciar</button>
+            <button className={`${btn} bg-success text-success-foreground`} disabled={t.estado !== "en_curso"} onClick={() => accion("finalizar_tarea")}>Finalizar</button>
+            <button className={`${btn} col-span-2 bg-primary text-primary-foreground text-base`} disabled={receta.length === 0} onClick={consumo}>Registrar consumo</button>
+          </div>)}
       </DialogContent>
     </Dialog>
   );

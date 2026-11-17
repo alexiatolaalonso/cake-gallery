@@ -23,6 +23,7 @@ const cuentas: [string, string][] = [
   ["Mostrador", "mostrador@obrador.test"],
   ["Producción", "produccion@obrador.test"],
   ["Equipo (Decoración)", "equipo@obrador.test"],
+  ["Equipo (Armado)", "armado@obrador.test"],
 ];
 
 function AuthPage() {

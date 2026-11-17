@@ -87,3 +87,14 @@ export function generarICS(o: { folio: number; titulo: string; inicio: string; d
     o.lugar ? `LOCATION:${o.lugar.replace(/[,;]/g, " ")}` : "", "END:VEVENT", "END:VCALENDAR",
   ].filter(Boolean).join("\r\n");
 }
+
+export const secuenciaEtapas = ["horneado", "relleno", "cobertura", "decoracion", "empaque"];
+
+export const pasosEtapa: Record<string, string[]> = {
+  horneado: ["Pesar los ingredientes de la receta del sabor", "Preparar los moldes (engrasar y enharinar)", "Mezclar la masa según la receta", "Hornear y comprobar el punto con un palillo", "Desmoldar y dejar enfriar sobre rejilla"],
+  relleno: ["Nivelar los bizcochos y cortarlos en capas", "Almibarar cada capa", "Untar el relleno de forma pareja", "Apilar las capas bien centradas", "Si tiene varios pisos, poner los soportes en cada piso", "Refrigerar hasta que esté firme"],
+  armado: ["Nivelar los bizcochos y cortarlos en capas", "Almibarar cada capa", "Untar el relleno de forma pareja", "Apilar las capas bien centradas", "Si tiene varios pisos, poner los soportes en cada piso", "Refrigerar hasta que esté firme"],
+  cobertura: ["Aplicar una capa fina de migas", "Refrigerar 20–30 minutos", "Aplicar la cobertura final", "Alisar laterales y parte de arriba", "Revisar que no queden huecos ni burbujas"],
+  decoracion: ["Leer la descripción del diseño del pedido", "Preparar colores y elementos decorativos", "Decorar según el nivel de diseño", "Revisar el acabado final"],
+  empaque: ["Colocar el pastel en su base de cartón", "Meterlo en caja y etiquetar con folio y cliente", "Dejarlo en refrigeración listo para entrega"],
+};

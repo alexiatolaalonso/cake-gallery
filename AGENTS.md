@@ -32,3 +32,4 @@ use the editor.
 ## Project rules
 - Business rules (pricing, lead times, backward planning, stock reservation, FEFO, invoice folios, cancellations) live in SECURITY DEFINER SQL functions with role checks; the UI only calls `rpc`, so rules cannot be bypassed from the browser.
 - Roles live only in `user_roles`, assigned by the `handle_new_user` trigger; the Equipo role reads tasks via `mis_tareas()` and never touches cost or payment tables.
+- `insumos_tarea` returns only the recipe of the task's stage (horneado→sabor, relleno/armado→relleno, cobertura→cobertura); consumption and the task sheet both rely on it so they never deduct the whole order.

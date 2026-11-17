@@ -50,6 +50,20 @@
       "when": 1794927951916,
       "tag": "0006_consumo_por_receta",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794935496102,
+      "tag": "0007_cuenta_equipo_armado",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794935513630,
+      "tag": "0008_insumos_por_etapa",
+      "breakpoints": true
     }
   ]
 }
