@@ -29,6 +29,8 @@ const btn = "rounded-lg px-4 py-3 text-lg font-extrabold disabled:opacity-40";
 function Tablero() {
   const qc = useQueryClient();
   const [dias, setDias] = useState(3);
+  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({ en_curso: true, atrasada: true });
+  const [filtroEtapa, setFiltroEtapa] = useState<string | null>(null);
   const { data = [] } = useQuery({
     queryKey: ["tablero", dias],
     queryFn: async () => ((await supabase.rpc("mis_tareas", { p_desde: hoyISO(-2), p_hasta: hoyISO(dias) })).data ?? []) as T[],
@@ -55,6 +57,7 @@ function Tablero() {
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
   });
   const col = (k: string) => pedidos.filter((p) => p.columna === k);
+  const visibles = (k: string) => col(k).filter((p) => k !== "en_curso" || !filtroEtapa || p.t.etapa === filtroEtapa);
 
   async function accion(fn: "iniciar_tarea" | "finalizar_tarea", id: string) {
     const { error } = await supabase.rpc(fn, { p_tarea: id });
@@ -77,9 +80,23 @@ function Tablero() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {columnas.map((c) => (
           <section key={c.k} className={`rounded-xl border-2 p-3 ${c.k === "atrasada" ? "border-destructive" : "border-pizarra-line"}`}>
-            <h2 className="mb-3 flex items-center gap-2 text-2xl font-bold"><span aria-hidden>{c.icon}</span>{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></h2>
-            <div className="space-y-3">
-              {col(c.k).map(({ t, etapas, faltan }) => (
+            <h2 className="text-2xl font-bold">
+              <button type="button" aria-expanded={!!abiertas[c.k]} onClick={() => setAbiertas({ ...abiertas, [c.k]: !abiertas[c.k] })} className="flex min-h-12 w-full items-center gap-2 text-left">
+                <span aria-hidden>{c.icon}</span><span className="min-w-0 flex-1">{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></span>
+                <span aria-hidden className="shrink-0 text-xl">{abiertas[c.k] ? "▲" : "▼"}</span>
+              </button>
+            </h2>
+            {abiertas[c.k] && c.k === "en_curso" && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[null, "cobertura", "decoracion", "empaque"].map((e) => {
+                  const n = col("en_curso").filter((p) => !e || p.t.etapa === e).length;
+                  return <button key={e ?? "todas"} type="button" onClick={() => setFiltroEtapa(e)} className={`min-h-11 rounded-full border-2 px-4 text-base font-bold ${filtroEtapa === e ? "border-gold bg-gold text-accent-foreground" : "border-pizarra-foreground/40"}`}>{e ? etapaLabel[e] : "Todas"} ({n})</button>;
+                })}
+              </div>
+            )}
+            {abiertas[c.k] && <div className="mt-3 space-y-3">
+              {c.k === "en_curso" && visibles(c.k).length === 0 && <p className="opacity-70">No hay pedidos en esta etapa.</p>}
+              {visibles(c.k).map(({ t, etapas, faltan }) => (
                 <article key={t.orden_id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
                   <p className="text-xl font-extrabold">Pedido #{t.folio}</p>
                   <EnRiesgo orden={t.orden_id} />
@@ -106,7 +123,7 @@ function Tablero() {
                   )}
                 </article>
               ))}
-            </div>
+            </div>}
           </section>
         ))}
       </div>

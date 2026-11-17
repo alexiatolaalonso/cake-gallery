@@ -1,0 +1,1 @@
+- [ ] Pizarra móvil: columnas Pendiente/En curso/Hecha/Atrasada desplegables; en En curso botones Cobertura/Decoración/Empaque
