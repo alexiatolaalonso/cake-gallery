@@ -13,6 +13,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const menu = [
+  { to: "/catalogo", label: "Catálogo", roles: ["administracion"] },
   { to: "/cotizador", label: "Cotizador", roles: ["administracion", "mostrador"] },
   { to: "/ordenes", label: "Órdenes", roles: ["administracion", "mostrador", "produccion"] },
   { to: "/tablero", label: "Tablero", roles: ["administracion", "produccion", "equipo"] },

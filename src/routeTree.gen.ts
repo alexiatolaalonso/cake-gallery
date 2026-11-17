@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedCobrosRouteImport } from './routes/_authenticated/cobros'
 import { Route as AuthenticatedCotizadorRouteImport } from './routes/_authenticated/cotizador'
 import { Route as AuthenticatedFacturasRouteImport } from './routes/_authenticated/facturas'
@@ -37,6 +38,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCatalogoRoute = AuthenticatedCatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCobrosRoute = AuthenticatedCobrosRouteImport.update({
   id: '/cobros',
@@ -99,6 +105,7 @@ const AuthenticatedOrdenesIdRoute = AuthenticatedOrdenesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/catalogo': typeof AuthenticatedCatalogoRoute
   '/cobros': typeof AuthenticatedCobrosRoute
   '/cotizador': typeof AuthenticatedCotizadorRoute
   '/facturas': typeof AuthenticatedFacturasRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/catalogo': typeof AuthenticatedCatalogoRoute
   '/cobros': typeof AuthenticatedCobrosRoute
   '/cotizador': typeof AuthenticatedCotizadorRoute
   '/facturas': typeof AuthenticatedFacturasRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/catalogo': typeof AuthenticatedCatalogoRoute
   '/_authenticated/cobros': typeof AuthenticatedCobrosRoute
   '/_authenticated/cotizador': typeof AuthenticatedCotizadorRoute
   '/_authenticated/facturas': typeof AuthenticatedFacturasRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/catalogo'
     | '/cobros'
     | '/cotizador'
     | '/facturas'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/catalogo'
     | '/cobros'
     | '/cotizador'
     | '/facturas'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/catalogo'
     | '/_authenticated/cobros'
     | '/_authenticated/cotizador'
     | '/_authenticated/facturas'
@@ -218,6 +230,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/catalogo': {
+      id: '/_authenticated/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof AuthenticatedCatalogoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cobros': {
       id: '/_authenticated/cobros'
@@ -313,6 +332,7 @@ const AuthenticatedOrdenesRouteWithChildren =
   AuthenticatedOrdenesRoute._addFileChildren(AuthenticatedOrdenesRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCatalogoRoute: typeof AuthenticatedCatalogoRoute
   AuthenticatedCobrosRoute: typeof AuthenticatedCobrosRoute
   AuthenticatedCotizadorRoute: typeof AuthenticatedCotizadorRoute
   AuthenticatedFacturasRoute: typeof AuthenticatedFacturasRoute
@@ -325,6 +345,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCatalogoRoute: AuthenticatedCatalogoRoute,
   AuthenticatedCobrosRoute: AuthenticatedCobrosRoute,
   AuthenticatedCotizadorRoute: AuthenticatedCotizadorRoute,
   AuthenticatedFacturasRoute: AuthenticatedFacturasRoute,
