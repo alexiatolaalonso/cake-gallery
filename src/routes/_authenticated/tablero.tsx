@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas } from "@/lib/obrador";
+import { errMsg, etapaLabel, fecha, fechaHora, hora, hoyISO, pasosEtapa, secuenciaEtapas, sesionQuery } from "@/lib/obrador";
 import { meta } from "@/components/Pagina";
 import { EnRiesgo } from "@/components/EnRiesgo";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +29,10 @@ const btn = "rounded-lg px-4 py-3 text-lg font-extrabold disabled:opacity-40";
 function Tablero() {
   const qc = useQueryClient();
   const [dias, setDias] = useState(3);
+  const [abiertas, setAbiertas] = useState<Record<string, boolean>>({ en_curso: true, atrasada: true });
+  const [filtroEtapa, setFiltroEtapa] = useState<string | null>(null);
+  const { data: sesion } = useQuery(sesionQuery);
+
   const { data = [] } = useQuery({
     queryKey: ["tablero", dias],
     queryFn: async () => ((await supabase.rpc("mis_tareas", { p_desde: hoyISO(-2), p_hasta: hoyISO(dias) })).data ?? []) as T[],
@@ -51,10 +55,21 @@ function Tablero() {
     const atrasada = mias.some((m) => m.atrasada);
     const todas = lista.every((a) => a.estado === "hecha");
     const empezada = lista.some((a) => a.estado !== "pendiente");
-    const columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
+    let columna = atrasada ? "atrasada" : todas ? "hecha" : empezada ? "en_curso" : "pendiente";
+    if (sesion?.rol === "equipo") {
+      // Un equipo ve el pedido según SUS etapas; al terminarlas pasa a Hecha y desaparece cuando el siguiente equipo empieza.
+      const mias_hechas = mias.every((m) => m.estado === "hecha");
+      const ultimaMia = Math.max(...lista.filter((a) => mias.some((m) => m.etapa === a.etapa)).map((a) => a.orden_etapa), 0);
+      const siguienteEmpezo = lista.some((a) => a.orden_etapa > ultimaMia && a.estado !== "pendiente");
+      if (mias_hechas && siguienteEmpezo) columna = "oculto";
+      else columna = mias.some((m) => m.atrasada) ? "atrasada" : mias_hechas ? "hecha" : mias.some((m) => m.estado !== "pendiente") ? "en_curso" : "pendiente";
+    }
     return { t, etapas: lista, columna, faltan: lista.filter((a) => a.estado !== "hecha") };
   });
+  // El rol Equipo no puede leer la tabla de equipos (tiene costos): se reconoce a Decoración por sus propias tareas.
+  const verEtapas = sesion?.rol === "administracion" || (sesion?.rol === "equipo" && data.some((t) => t.equipo.includes("Decoración")));
   const col = (k: string) => pedidos.filter((p) => p.columna === k);
+  const visibles = (k: string) => col(k).filter((p) => k !== "en_curso" || !verEtapas || !filtroEtapa || p.t.etapa === filtroEtapa);
 
   async function accion(fn: "iniciar_tarea" | "finalizar_tarea", id: string) {
     const { error } = await supabase.rpc(fn, { p_tarea: id });
@@ -77,9 +92,23 @@ function Tablero() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {columnas.map((c) => (
           <section key={c.k} className={`rounded-xl border-2 p-3 ${c.k === "atrasada" ? "border-destructive" : "border-pizarra-line"}`}>
-            <h2 className="mb-3 flex items-center gap-2 text-2xl font-bold"><span aria-hidden>{c.icon}</span>{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></h2>
-            <div className="space-y-3">
-              {col(c.k).map(({ t, etapas, faltan }) => (
+            <h2 className="text-2xl font-bold">
+              <button type="button" aria-expanded={!!abiertas[c.k]} onClick={() => setAbiertas({ ...abiertas, [c.k]: !abiertas[c.k] })} className="flex min-h-12 w-full items-center gap-2 text-left">
+                <span aria-hidden>{c.icon}</span><span className="min-w-0 flex-1">{c.t} <span className="text-lg opacity-70">({col(c.k).length})</span></span>
+                <span aria-hidden className="shrink-0 text-xl">{abiertas[c.k] ? "▲" : "▼"}</span>
+              </button>
+            </h2>
+            {abiertas[c.k] && c.k === "en_curso" && verEtapas && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[null, "cobertura", "decoracion", "empaque"].map((e) => {
+                  const n = col("en_curso").filter((p) => !e || p.t.etapa === e).length;
+                  return <button key={e ?? "todas"} type="button" onClick={() => setFiltroEtapa(e)} className={`min-h-11 rounded-full border-2 px-4 text-base font-bold ${filtroEtapa === e ? "border-gold bg-gold text-accent-foreground" : "border-pizarra-foreground/40"}`}>{e ? etapaLabel[e] : "Todas"} ({n})</button>;
+                })}
+              </div>
+            )}
+            {abiertas[c.k] && <div className="mt-3 space-y-3">
+              {c.k === "en_curso" && verEtapas && visibles(c.k).length === 0 && <p className="opacity-70">No hay pedidos en esta etapa.</p>}
+              {visibles(c.k).map(({ t, etapas, faltan }) => (
                 <article key={t.orden_id} className={`rounded-lg border-l-8 bg-pizarra-line p-4 ${t.atrasada ? "border-destructive" : t.estado === "hecha" ? "border-success" : t.estado === "en_curso" ? "border-gold" : "border-pizarra-foreground/40"}`}>
                   <p className="text-xl font-extrabold">Pedido #{t.folio}</p>
                   <EnRiesgo orden={t.orden_id} />
@@ -106,7 +135,7 @@ function Tablero() {
                   )}
                 </article>
               ))}
-            </div>
+            </div>}
           </section>
         ))}
       </div>
