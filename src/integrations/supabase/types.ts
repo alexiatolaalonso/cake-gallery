@@ -570,6 +570,7 @@ export type Database = {
           descripcion: string | null
           direccion: string | null
           entrega_autorizada_motivo: string | null
+          envio_compartido_con: string | null
           estado: Database["public"]["Enums"]["estado_orden"]
           fecha_entrega: string
           folio: number
@@ -592,6 +593,7 @@ export type Database = {
           descripcion?: string | null
           direccion?: string | null
           entrega_autorizada_motivo?: string | null
+          envio_compartido_con?: string | null
           estado?: Database["public"]["Enums"]["estado_orden"]
           fecha_entrega: string
           folio?: number
@@ -614,6 +616,7 @@ export type Database = {
           descripcion?: string | null
           direccion?: string | null
           entrega_autorizada_motivo?: string | null
+          envio_compartido_con?: string | null
           estado?: Database["public"]["Enums"]["estado_orden"]
           fecha_entrega?: string
           folio?: number
@@ -640,6 +643,13 @@ export type Database = {
             columns: ["cobertura_id"]
             isOneToOne: false
             referencedRelation: "coberturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordenes_envio_compartido_con_fkey"
+            columns: ["envio_compartido_con"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
             referencedColumns: ["id"]
           },
           {
@@ -1111,6 +1121,10 @@ export type Database = {
           p_motivo: string
           p_orden: string
         }
+        Returns: Json
+      }
+      compartir_envio: {
+        Args: { p_compartir: boolean; p_con: string; p_orden: string }
         Returns: Json
       }
       confirmar_orden: {

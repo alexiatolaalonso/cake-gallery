@@ -43,6 +43,20 @@ function Ficha() {
   const [dlg, setDlg] = useState<null | "aviso" | "cambio" | "cancelar" | "cobro" | "entregar" | "confirmar">(null);
   const [form, setForm] = useState<{ porciones: number; sabor: string; relleno: string; cobertura: string; fecha: string; hora: string; motivo: string; metodo: Metodo; monto: number; clave: string }>({ porciones: 0, sabor: "", relleno: "", cobertura: "", fecha: "", hora: "", motivo: "", metodo: "efectivo", monto: 0, clave: "" });
 
+  const { data: hermanas } = useQuery({
+    queryKey: ["orden-hermanas", id, data?.o?.fecha_entrega],
+    enabled: s?.rol === "administracion" && !!data?.o && data.o.clientes?.tipo === "salon" && data.o.modo_entrega !== "sucursal",
+    queryFn: async () => {
+      const o = data!.o!;
+      const dia = new Date(o.fecha_entrega).toLocaleDateString("en-CA", { timeZone: TZ });
+      const desde = new Date(`${dia}T00:00:00-06:00`).toISOString();
+      const hasta = new Date(new Date(desde).getTime() + 86400000).toISOString();
+      const { data: r } = await supabase.from("ordenes").select("id, folio, envio_compartido_con, modo_entrega")
+        .eq("cliente_id", o.cliente_id).neq("id", o.id).gte("fecha_entrega", desde).lt("fecha_entrega", hasta)
+        .in("estado", ["borrador", "confirmada", "en_produccion", "lista"]).neq("modo_entrega", "sucursal");
+      return r ?? [];
+    },
+  });
   const [aviso, setAviso] = useState<{ texto: string; tel: string | null }>({ texto: "", tel: null });
   if (isLoading || !data?.o) return <p>{isLoading ? "Cargando…" : "Orden no encontrada o sin acceso."}</p>;
   const { o, tareas, cobros, facturas } = data;
@@ -129,6 +143,17 @@ function Ficha() {
             <div><dt className="text-muted-foreground">Diseño</dt><dd className="font-bold">{o.niveles_diseno?.nombre}</dd></div>
           </dl>
           <p className="rounded-md bg-muted p-3 text-sm"><b>Referencia:</b> {o.descripcion || "—"}</p>
+          {s?.rol === "administracion" && (o.envio_compartido_con ? (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+              <span>🚚 Envío compartido con la orden #{hermanas?.find((h) => h.id === o.envio_compartido_con)?.folio ?? "—"} (envío bonificado en este pedido)</span>
+              <Button size="sm" variant="outline" onClick={() => rpc(() => supabase.rpc("compartir_envio", { p_orden: id, p_con: o.envio_compartido_con!, p_compartir: false }), (d) => `Envío compartido quitado · total ${mxn(d.precio)}`)}>Quitar</Button>
+            </div>
+          ) : (hermanas ?? []).filter((h) => !h.envio_compartido_con).map((h) => (
+            <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-md border p-3 text-sm">
+              <span>Hay otra orden (#{h.folio}) para este salón el mismo día.</span>
+              <Button size="sm" onClick={() => rpc(() => supabase.rpc("compartir_envio", { p_orden: id, p_con: h.id, p_compartir: true }), (d) => `Envío compartido · nuevo total ${mxn(d.precio)}`)}>Compartir envío</Button>
+            </div>
+          )))}
           {o.entrega_autorizada_motivo && <p className="text-sm">Entrega autorizada con saldo: {o.entrega_autorizada_motivo}</p>}
         </section>
         {puedeCaja && (

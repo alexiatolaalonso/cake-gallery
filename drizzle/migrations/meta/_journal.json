@@ -148,6 +148,13 @@
       "when": 1795026626068,
       "tag": "0020_tarea_manual_conserva_y_revisa",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795027659149,
+      "tag": "0021_envio_compartido",
+      "breakpoints": true
     }
   ]
 }
