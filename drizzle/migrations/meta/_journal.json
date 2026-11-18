@@ -127,6 +127,13 @@
       "when": 1795001836295,
       "tag": "0017_cambio_con_consumos_pendientes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795008639197,
+      "tag": "0018_cambiar_orden_where_true",
+      "breakpoints": true
     }
   ]
 }

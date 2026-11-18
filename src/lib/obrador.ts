@@ -45,6 +45,7 @@ export const hoyISO = (offset = 0) => {
 };
 
 const TRADUCCIONES: [RegExp, string][] = [
+  [/DELETE requires a WHERE clause/i, "Error interno al procesar el cambio. Inténtalo de nuevo."],
   [/invalid input syntax for type (integer|bigint|numeric)/i, "Ese valor debe ser un número entero, sin decimales ni letras."],
   [/invalid input syntax for type uuid/i, "Alguna opción seleccionada ya no es válida. Vuelve a elegirla."],
   [/invalid input syntax for type (date|timestamp|time)/i, "La fecha o la hora escrita no es válida. Usá el calendario."],

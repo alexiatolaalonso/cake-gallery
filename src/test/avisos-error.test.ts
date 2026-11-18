@@ -40,4 +40,8 @@ describe("Avisos de error en español", () => {
       }),
     ).toBe("Falta un dato obligatorio o ya no existe.");
   });
+
+  it("traduce el fallo interno al cambiar un pedido", () => {
+    expect(errMsg({ message: "DELETE requires a WHERE clause" })).toBe("Error interno al procesar el cambio. Inténtalo de nuevo.");
+  });
 });

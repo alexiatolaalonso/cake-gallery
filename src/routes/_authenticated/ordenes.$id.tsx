@@ -50,7 +50,7 @@ function Ficha() {
   const tipo = o.tipos_pastel;
   const avisoPorciones = (() => {
     const p = form.porciones;
-    if (p === 0) return "Escribí las porciones (de 10 en 10).";
+    if (p === 0) return "Escribe las porciones (de 10 en 10).";
     if (!Number.isInteger(p)) return "Las porciones deben ser un número entero, sin decimales.";
     if (p < 10 || p % 10 !== 0) return "Las porciones van de 10 en 10 (10, 20, 30…).";
     if (tipo?.min_porciones != null && tipo?.max_porciones != null && (p < tipo.min_porciones || p > tipo.max_porciones))
