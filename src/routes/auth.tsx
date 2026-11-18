@@ -9,22 +9,14 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Entrar · Obrador" },
+      { title: "Entrar · Cake Gallery" },
       { name: "description", content: "Acceso al sistema del obrador por rol." },
-      { property: "og:title", content: "Entrar · Obrador" },
+      { property: "og:title", content: "Entrar · Cake Gallery" },
       { property: "og:description", content: "Acceso al sistema del obrador por rol." },
     ],
   }),
   component: AuthPage,
 });
-
-const cuentas: [string, string][] = [
-  ["Administración", "admin@obrador.test"],
-  ["Mostrador", "mostrador@obrador.test"],
-  ["Producción", "produccion@obrador.test"],
-  ["Equipo (Decoración)", "equipo@obrador.test"],
-  ["Equipo (Armado)", "armado@obrador.test"],
-];
 
 function AuthPage() {
   const nav = useNavigate();
@@ -45,57 +37,36 @@ function AuthPage() {
   }
 
   return (
-    <main className="grid min-h-screen md:grid-cols-2">
-      <section className="pizarra hidden flex-col justify-between p-12 md:flex">
+    <main className="flex min-h-screen flex-col md:grid md:grid-cols-2">
+      <section className="pizarra flex flex-col gap-3 px-6 py-8 md:justify-between md:p-12">
         <p className="text-sm uppercase tracking-[0.3em] text-gold">CAKE GALLERY</p>
         <div>
-          <h1 className="text-5xl font-bold leading-tight">
+          <h1 className="text-3xl font-bold leading-tight md:text-5xl">
             Cada pastel,
             <br />
             una obra.
           </h1>
-          <p className="mt-4 max-w-sm opacity-80">
+          <p className="mt-4 hidden max-w-sm opacity-80 md:block">
             Cotiza por porciones, planifica hacia atrás desde la entrega y lleva el betún, los pisos y el anticipo en un
             solo lugar.
           </p>
         </div>
-        <p className="text-xs opacity-60">Sistema interno · No es comprobante fiscal</p>
+        <p className="hidden text-xs opacity-60 md:block">Sistema interno · No es comprobante fiscal</p>
       </section>
-      <section className="flex items-center justify-center p-6">
+      <section className="flex flex-1 items-start justify-center px-6 py-8 md:items-center">
         <form onSubmit={entrar} className="w-full max-w-sm space-y-5">
-          <h2 className="text-3xl font-bold">Entrar al obrador</h2>
+          <h2 className="text-2xl font-bold md:text-3xl">Entrar al obrador</h2>
           <div className="space-y-2">
             <Label htmlFor="email">Correo</Label>
-            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 text-base" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="pass">Contraseña</Label>
-            <Input id="pass" type="password" required value={pass} onChange={(e) => setPass(e.target.value)} />
+            <Input id="pass" type="password" required value={pass} onChange={(e) => setPass(e.target.value)} className="h-12 text-base" />
           </div>
-          <Button className="w-full" disabled={cargando}>
+          <Button className="h-12 w-full text-base" disabled={cargando}>
             {cargando ? "Entrando…" : "Entrar"}
           </Button>
-          <div className="rounded-lg border bg-card p-4 text-sm">
-            <p className="mb-2 font-bold">
-              Cuentas de prueba · contraseña <code>Obrador2026!</code>
-            </p>
-            <ul className="space-y-1">
-              {cuentas.map(([r, c]) => (
-                <li key={c}>
-                  <button
-                    type="button"
-                    className="text-left underline-offset-2 hover:underline"
-                    onClick={() => {
-                      setEmail(c);
-                      setPass("Obrador2026!");
-                    }}
-                  >
-                    <span className="font-semibold">{r}:</span> {c}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
         </form>
       </section>
     </main>
