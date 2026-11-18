@@ -116,7 +116,7 @@ function Ficha() {
       <section className="rounded-xl border bg-card p-5">
         <h3 className="mb-3 text-lg font-bold">Tareas (planificadas hacia atrás)</h3>
         <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          {tareas.map((t) => (
+          {tareas.filter((t) => t.orden_etapa > 0).map((t) => (
             <li key={t.id} className="rounded-lg border p-3 text-sm">
               <p className="font-bold">{t.orden_etapa}. {etapaLabel[t.etapa]}</p>
               <p>{fechaHora(t.inicio)} → {hora(t.fin)}</p>
@@ -136,7 +136,7 @@ function Ficha() {
           </>}
           {dlg === "cambio" && cat && <>
             <DialogHeader><DialogTitle>Cambiar porciones o sabor</DialogTitle></DialogHeader>
-            <p className="text-sm text-muted-foreground">Recalcula tareas, insumos y factura. Rechazado si ya empezó Decoración. Recargo 15% si faltan menos de 3 días.</p>
+            <p className="text-sm text-muted-foreground">Recalcula tareas, insumos y factura. Permitido hasta que empieza Decoración. Si faltan menos de 3 días, se cobra un recargo del 15 % sobre la diferencia. Lo ya hecho que haya que rehacer se registra como gasto interno, sin cobrarlo al cliente.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1"><Label htmlFor="cambio-porciones">Porciones</Label>
                 <Input id="cambio-porciones" type="number" step={10} min={tipo?.min_porciones ?? 10} max={tipo?.max_porciones ?? 120} value={form.porciones} aria-invalid={!!avisoPorciones} onChange={(e) => setForm({ ...form, porciones: Number(e.target.value) })} />
@@ -146,7 +146,7 @@ function Ficha() {
               <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={form.relleno} onChange={(e) => setForm({ ...form, relleno: e.target.value })}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
               <div className="space-y-1"><Label>Cobertura</Label><select className={sel} value={form.cobertura} onChange={(e) => setForm({ ...form, cobertura: e.target.value })}>{cat.coberturas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
             </div>
-            <DialogFooter><Button disabled={!!avisoPorciones} onClick={() => rpc(() => supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura }), (d) => `Nuevo total ${mxn(d.precio)}${d.recargo > 0 ? " (con recargo 15%)" : ""}`)}>Aplicar cambio</Button></DialogFooter>
+            <DialogFooter><Button disabled={!!avisoPorciones} onClick={() => rpc(() => supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura }), (d) => `Nuevo total ${mxn(d.precio)}${d.recargo > 0 ? ` (recargo ${mxn(d.recargo)})` : ""}${d.rehacer?.length ? ` · Se rehace: ${d.rehacer.map((e: string) => etapaLabel[e] ?? e).join(", ")}` : ""}`)}>Aplicar cambio</Button></DialogFooter>
           </>}
           {dlg === "cobro" && <>
             <DialogHeader><DialogTitle>Cobrar saldo</DialogTitle></DialogHeader>

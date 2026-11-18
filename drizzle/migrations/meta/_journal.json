@@ -113,6 +113,20 @@
       "when": 1794942149461,
       "tag": "0015_cobertura_en_decoracion",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795001757539,
+      "tag": "0016_cambio_recargo_diferencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795001836295,
+      "tag": "0017_cambio_con_consumos_pendientes",
+      "breakpoints": true
     }
   ]
 }
