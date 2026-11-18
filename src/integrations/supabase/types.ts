@@ -1089,6 +1089,7 @@ export type Database = {
       cambiar_orden: {
         Args: {
           p_cobertura: string
+          p_fecha?: string
           p_orden: string
           p_porciones: number
           p_relleno: string

@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { enlaceWhatsApp, mensajeCambio, telWhatsApp, type Cambio } from "@/lib/aviso-cliente";
+import { TZ } from "@/lib/obrador";
 
 export const Route = createFileRoute("/_authenticated/ordenes/$id")({
   head: () => meta("Ficha de orden", "Detalle de la orden, cobros y tareas"),
@@ -38,9 +40,10 @@ function Ficha() {
       return { o: o.data, tareas: t.data ?? [], cobros: c.data ?? [], facturas: f.data ?? [] };
     },
   });
-  const [dlg, setDlg] = useState<null | "cambio" | "cancelar" | "cobro" | "entregar" | "confirmar">(null);
-  const [form, setForm] = useState<{ porciones: number; sabor: string; relleno: string; cobertura: string; motivo: string; metodo: Metodo; monto: number; clave: string }>({ porciones: 0, sabor: "", relleno: "", cobertura: "", motivo: "", metodo: "efectivo", monto: 0, clave: "" });
+  const [dlg, setDlg] = useState<null | "aviso" | "cambio" | "cancelar" | "cobro" | "entregar" | "confirmar">(null);
+  const [form, setForm] = useState<{ porciones: number; sabor: string; relleno: string; cobertura: string; fecha: string; hora: string; motivo: string; metodo: Metodo; monto: number; clave: string }>({ porciones: 0, sabor: "", relleno: "", cobertura: "", fecha: "", hora: "", motivo: "", metodo: "efectivo", monto: 0, clave: "" });
 
+  const [aviso, setAviso] = useState<{ texto: string; tel: string | null }>({ texto: "", tel: null });
   if (isLoading || !data?.o) return <p>{isLoading ? "Cargando…" : "Orden no encontrada o sin acceso."}</p>;
   const { o, tareas, cobros, facturas } = data;
   const pagado = cobros.reduce((a, c) => a + Number(c.monto), 0);
@@ -57,6 +60,31 @@ function Ficha() {
       return `${tipo.nombre ?? "Este pastel"} admite de ${tipo.min_porciones} a ${tipo.max_porciones} porciones.`;
     return "";
   })();
+
+  const fechaLocal = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: TZ });
+  const horaLocal = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
+  const nombreDe = (lista: { id: string; nombre: string }[] | undefined, id: string) => lista?.find((x) => x.id === id)?.nombre ?? "—";
+  const fechaNueva = form.fecha && form.hora ? new Date(`${form.fecha}T${form.hora}:00-06:00`).toISOString() : o.fecha_entrega;
+  const cambios: Cambio[] = [];
+  if (dlg === "cambio" && cat) {
+    if (form.porciones !== o.porciones) cambios.push({ campo: "Porciones", antes: String(o.porciones), ahora: String(form.porciones) });
+    if (form.sabor !== o.sabor_id) cambios.push({ campo: "Sabor", antes: nombreDe(cat.sabores, o.sabor_id), ahora: nombreDe(cat.sabores, form.sabor) });
+    if (form.relleno !== o.relleno_id) cambios.push({ campo: "Relleno", antes: nombreDe(cat.rellenos, o.relleno_id), ahora: nombreDe(cat.rellenos, form.relleno) });
+    if (form.cobertura !== o.cobertura_id) cambios.push({ campo: "Cobertura", antes: nombreDe(cat.coberturas, o.cobertura_id), ahora: nombreDe(cat.coberturas, form.cobertura) });
+    if (new Date(fechaNueva).getTime() !== new Date(o.fecha_entrega).getTime()) cambios.push({ campo: "Entrega", antes: fechaHora(o.fecha_entrega), ahora: fechaHora(fechaNueva) });
+  }
+
+  async function aplicarCambio() {
+    const lista = [...cambios];
+    const { data: d, error } = await supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura, p_fecha: fechaNueva });
+    if (error) { toast.error(errMsg(error)); return; }
+    const r = d as { precio: number; recargo: number; rehacer?: string[] };
+    toast.success(`Nuevo total ${mxn(r.precio)}${r.recargo > 0 ? ` (recargo ${mxn(r.recargo)})` : ""}${r.rehacer?.length ? ` · Se rehace: ${r.rehacer.map((e) => etapaLabel[e] ?? e).join(", ")}` : ""}`);
+    const texto = mensajeCambio({ cliente: o!.clientes?.nombre ?? "", folio: o!.folio, cambios: lista, total: mxn(r.precio), saldo: mxn(Math.max(Number(r.precio) - pagado, 0)) });
+    setAviso({ texto, tel: telWhatsApp(o!.clientes?.telefono) });
+    setDlg("aviso");
+    refrescar();
+  }
 
   async function rpc(fn: () => PromiseLike<{ data: unknown; error: unknown }>, ok: (d: any) => string) {
     const { data, error } = await fn();
@@ -83,7 +111,7 @@ function Ficha() {
         <Button variant="outline" onClick={ics}>Descargar .ics</Button>
         {puedeCaja && o.estado === "borrador" && <Button onClick={() => { setForm({ ...form, metodo: "efectivo", monto: Math.round(Number(o.precio) * 50) / 100, clave: crypto.randomUUID() }); setDlg("confirmar"); }}>Confirmar con anticipo</Button>}
         {puedeCaja && activo && <>
-          <Button variant="outline" onClick={() => { setForm({ ...form, porciones: o.porciones, sabor: o.sabor_id, relleno: o.relleno_id, cobertura: o.cobertura_id }); setDlg("cambio"); }}>Cambiar porciones/sabor</Button>
+          <Button variant="outline" onClick={() => { setForm({ ...form, porciones: o.porciones, sabor: o.sabor_id, relleno: o.relleno_id, cobertura: o.cobertura_id, fecha: fechaLocal(o.fecha_entrega), hora: horaLocal(o.fecha_entrega) }); setDlg("cambio"); }}>Modificar pedido</Button>
           <Button variant="outline" onClick={() => { setForm({ ...form, monto: saldo, clave: crypto.randomUUID() }); setDlg("cobro"); }} disabled={saldo <= 0}>Cobrar saldo</Button>
           <Button onClick={() => { setForm({ ...form, motivo: "" }); setDlg("entregar"); }}>Marcar entregada</Button>
           <Button variant="destructive" onClick={() => { setForm({ ...form, motivo: "" }); setDlg("cancelar"); }}>Cancelar</Button>
@@ -135,7 +163,7 @@ function Ficha() {
             <DialogFooter><Button onClick={() => rpc(() => supabase.rpc("confirmar_orden", { p_orden: id, p_metodo: form.metodo, p_monto: form.monto, p_clave: form.clave }), (d) => `Confirmada · ${d.factura ?? ""}`)}>Confirmar</Button></DialogFooter>
           </>}
           {dlg === "cambio" && cat && <>
-            <DialogHeader><DialogTitle>Cambiar porciones o sabor</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Modificar pedido</DialogTitle></DialogHeader>
             <p className="text-sm text-muted-foreground">Recalcula tareas, insumos y factura. Permitido hasta que empieza Decoración. Si faltan menos de 3 días, se cobra un recargo del 15 % sobre la diferencia. Lo ya hecho que haya que rehacer se registra como gasto interno, sin cobrarlo al cliente.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1"><Label htmlFor="cambio-porciones">Porciones</Label>
@@ -145,8 +173,23 @@ function Ficha() {
               <div className="space-y-1"><Label>Sabor</Label><select className={sel} value={form.sabor} onChange={(e) => setForm({ ...form, sabor: e.target.value })}>{cat.sabores.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
               <div className="space-y-1"><Label>Relleno</Label><select className={sel} value={form.relleno} onChange={(e) => setForm({ ...form, relleno: e.target.value })}>{cat.rellenos.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
               <div className="space-y-1"><Label>Cobertura</Label><select className={sel} value={form.cobertura} onChange={(e) => setForm({ ...form, cobertura: e.target.value })}>{cat.coberturas.map((x) => <option key={x.id} value={x.id}>{x.nombre}</option>)}</select></div>
+              <div className="space-y-1"><Label htmlFor="cambio-fecha">Fecha de entrega</Label><Input id="cambio-fecha" type="date" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} /></div>
+              <div className="space-y-1"><Label htmlFor="cambio-hora">Hora</Label><Input id="cambio-hora" type="time" step={900} value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })} /></div>
             </div>
-            <DialogFooter><Button disabled={!!avisoPorciones} onClick={() => rpc(() => supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura }), (d) => `Nuevo total ${mxn(d.precio)}${d.recargo > 0 ? ` (recargo ${mxn(d.recargo)})` : ""}${d.rehacer?.length ? ` · Se rehace: ${d.rehacer.map((e: string) => etapaLabel[e] ?? e).join(", ")}` : ""}`)}>Aplicar cambio</Button></DialogFooter>
+            <p className="text-xs text-muted-foreground">La nueva fecha sigue las reglas del cotizador: plazo mínimo, horario de recogida de 11:15 a 19:00 y hueco en los equipos.</p>
+            {cambios.length > 0 ? (
+              <ul className="rounded-md bg-muted p-3 text-sm">{cambios.map((c) => <li key={c.campo}><b>{c.campo}:</b> {c.antes} → {c.ahora}</li>)}</ul>
+            ) : <p className="text-sm text-muted-foreground">Todavía no has cambiado nada.</p>}
+            <DialogFooter><Button disabled={!!avisoPorciones || cambios.length === 0} onClick={aplicarCambio}>Aplicar cambio</Button></DialogFooter>
+          </>}
+          {dlg === "aviso" && <>
+            <DialogHeader><DialogTitle>Avisar al cliente</DialogTitle></DialogHeader>
+            <p className="rounded-md bg-muted p-3 text-sm">{aviso.texto}</p>
+            {!aviso.tel && <p className="text-sm font-bold text-destructive">⚠ Este cliente no tiene un teléfono válido. Copia el mensaje y envíalo por otro medio.</p>}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { navigator.clipboard.writeText(aviso.texto); toast.success("Mensaje copiado"); }}>Copiar mensaje</Button>
+              {aviso.tel && <Button asChild><a href={enlaceWhatsApp(aviso.tel, aviso.texto)} target="_blank" rel="noopener noreferrer">Avisar por WhatsApp</a></Button>}
+            </DialogFooter>
           </>}
           {dlg === "cobro" && <>
             <DialogHeader><DialogTitle>Cobrar saldo</DialogTitle></DialogHeader>
