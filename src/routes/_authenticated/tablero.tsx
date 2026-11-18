@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/tablero")({
   component: Tablero,
 });
 
-type T = { id: string; orden_id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; fecha_entrega: string; bloqueo_etapa: string | null; bloqueo_estado: string | null };
+type T = { id: string; orden_id: string; folio: number; etapa: string; equipo: string; dia: string; inicio: string; fin: string; minutos: number; estado: string; atrasada: boolean; porciones: number; tipo: string; sabor: string; relleno: string; cobertura: string; diseno: string; descripcion: string | null; cliente: string; fecha_entrega: string; bloqueo_etapa: string | null; bloqueo_estado: string | null; requiere_revision?: boolean };
 const columnas = [
   { k: "pendiente", t: "Pendiente", icon: "○" },
   { k: "en_curso", t: "En curso", icon: "◐" },
@@ -124,6 +124,7 @@ function Tablero() {
                   {t.descripcion && <p className="mt-1 text-base opacity-90">“{t.descripcion}”</p>}
                   <p className="mt-2 text-lg font-bold">{fecha(t.dia)} · {hora(t.inicio)}–{hora(t.fin)} · {t.minutos} min</p>
                   {t.atrasada && <p className="text-lg font-extrabold text-destructive">⚠ ATRASADA ({t.estado === "en_curso" ? "en curso" : "sin iniciar"})</p>}
+                  {t.requiere_revision && <p className="mt-2 rounded bg-destructive px-2 py-1 text-base font-bold text-destructive-foreground">⚠ Tarea movida a mano y el pedido cambió: revisar horario</p>}
                   {t.estado === "pendiente" && t.bloqueo_etapa && <p className="mt-2 rounded bg-gold/20 px-2 py-1 text-lg font-bold">⏳ Espera a: {etapaLabel[t.bloqueo_etapa] ?? t.bloqueo_etapa} #{t.folio} ({t.bloqueo_estado === "en_curso" ? "En curso" : "Pendiente"})</p>}
                   <button className={`${btn} mt-3 w-full border-2 border-pizarra-foreground/40 text-base`} onClick={() => setFicha(t)}>📋 Ver ficha</button>
                   {t.estado !== "hecha" && (

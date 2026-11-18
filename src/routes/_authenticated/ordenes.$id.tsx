@@ -149,6 +149,10 @@ function Ficha() {
               <p className="font-bold">{t.orden_etapa}. {etapaLabel[t.etapa]}</p>
               <p>{fechaHora(t.inicio)} → {hora(t.fin)}</p>
               <p>{t.minutos} min · {t.estado === "hecha" ? "✓ Hecha" : t.estado === "en_curso" ? "◐ En curso" : "○ Pendiente"}{t.editada_manual ? " · editada" : ""}</p>
+              {t.requiere_revision && <div className="mt-2 space-y-1 rounded bg-destructive/10 p-2">
+                <p className="text-xs font-bold text-destructive">⚠ Revisar horario: se movió a mano y el pedido cambió</p>
+                {(s?.rol === "administracion" || s?.rol === "produccion") && <Button size="sm" variant="outline" onClick={() => rpc(() => supabase.rpc("marcar_tarea_revisada", { p_tarea: t.id }), () => "Tarea revisada")}>✓ Confirmar revisión</Button>}
+              </div>}
             </li>
           ))}
           {!tareas.length && <li className="text-sm text-muted-foreground">Sin tareas (se generan al confirmar).</li>}

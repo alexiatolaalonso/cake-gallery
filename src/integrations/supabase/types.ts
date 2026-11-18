@@ -794,6 +794,7 @@ export type Database = {
           minutos: number
           orden_etapa: number
           orden_id: string
+          requiere_revision: boolean
         }
         Insert: {
           dia: string
@@ -809,6 +810,7 @@ export type Database = {
           minutos: number
           orden_etapa: number
           orden_id: string
+          requiere_revision?: boolean
         }
         Update: {
           dia?: string
@@ -824,6 +826,7 @@ export type Database = {
           minutos?: number
           orden_etapa?: number
           orden_id?: string
+          requiere_revision?: boolean
         }
         Relationships: [
           {
@@ -1028,6 +1031,7 @@ export type Database = {
           minutos: number
           orden_etapa: number
           orden_id: string
+          requiere_revision: boolean
         }
         SetofOptions: {
           from: "*"
@@ -1175,6 +1179,7 @@ export type Database = {
         Args: { p_equipo: string; p_fecha: string; p_sin: boolean }
         Returns: undefined
       }
+      marcar_tarea_revisada: { Args: { p_tarea: string }; Returns: undefined }
       mi_equipo: { Args: never; Returns: string }
       mi_rol: { Args: never; Returns: Database["public"]["Enums"]["app_role"] }
       mis_tareas: {
@@ -1201,6 +1206,7 @@ export type Database = {
           orden_id: string
           porciones: number
           relleno: string
+          requiere_revision: boolean
           sabor: string
           tipo: string
         }[]

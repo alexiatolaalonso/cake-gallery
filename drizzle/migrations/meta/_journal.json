@@ -141,6 +141,13 @@
       "when": 1795009150207,
       "tag": "0019_cambiar_orden_con_fecha",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795026626068,
+      "tag": "0020_tarea_manual_conserva_y_revisa",
+      "breakpoints": true
     }
   ]
 }
