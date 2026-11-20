@@ -35,3 +35,4 @@ use the editor.
 - `insumos_tarea` returns only the recipe of the task's stage (horneado→sabor, relleno/armado→relleno, cobertura→cobertura); consumption and the task sheet both rely on it so they never deduct the whole order.
 - Ingredient availability is checked against the start of the stage that uses it (`_necesidad_fechas`); `ordenes_en_riesgo()` flags confirmed orders whose stock + on-time purchases no longer cover reservations, and also expires lots due today, since pg_cron is not available.
 - Stage→team mapping lives in `_planificar` (horneado→Horno, relleno→Armado, cobertura/decoración/empaque→Decoración); change it there and re-run `_generar_plan` for pending orders.
+- Urgent orders (below lead time) and overtime go through `solicitudes_autorizacion`; only Administración approves via `resolver_solicitud`, and `_confirmar`/`cambiar_orden` check `_urgencia_ok` so the rule can't be skipped from the browser.

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PanelSolicitudes } from "@/components/Autorizaciones";
 import { rolLabel, sesionQuery, type Rol } from "@/lib/obrador";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -50,6 +51,7 @@ function Layout() {
               <span className="truncate opacity-80 sm:hidden">
                 <b>{rol ? rolLabel[rol] : "Sin rol"}</b>
               </span>
+              {rol === "administracion" && <PanelSolicitudes />}
               <button
                 onClick={salir}
                 className="shrink-0 rounded border border-sidebar-border px-3 py-1 hover:bg-sidebar-accent"

@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { EstadoHorasExtra, HorasExtraDialog, pedirAutorizacion, useSolicitudesOrden } from "@/components/Autorizaciones";
+import { horasExtraDesdeAviso, pideUrgencia } from "@/lib/autorizaciones";
 import { enlaceWhatsApp, mensajeCambio, telWhatsApp, type Cambio } from "@/lib/aviso-cliente";
 import { TZ } from "@/lib/obrador";
 
@@ -58,6 +60,9 @@ function Ficha() {
     },
   });
   const [aviso, setAviso] = useState<{ texto: string; tel: string | null }>({ texto: "", tel: null });
+  const [errCambio, setErrCambio] = useState<string | null>(null);
+  const [heOpen, setHeOpen] = useState(false);
+  const { data: solicitudes } = useSolicitudesOrden(id);
   if (isLoading || !data?.o) return <p>{isLoading ? "Cargando…" : "Orden no encontrada o sin acceso."}</p>;
   const { o, tareas, cobros, facturas } = data;
   const pagado = cobros.reduce((a, c) => a + Number(c.monto), 0);
@@ -91,7 +96,8 @@ function Ficha() {
   async function aplicarCambio() {
     const lista = [...cambios];
     const { data: d, error } = await supabase.rpc("cambiar_orden", { p_orden: id, p_porciones: form.porciones, p_sabor: form.sabor, p_relleno: form.relleno, p_cobertura: form.cobertura, p_fecha: fechaNueva });
-    if (error) { toast.error(errMsg(error)); return; }
+    if (error) { setErrCambio(errMsg(error)); toast.error(errMsg(error)); return; }
+    setErrCambio(null);
     const r = d as { precio: number; recargo: number; rehacer?: string[] };
     toast.success(`Nuevo total ${mxn(r.precio)}${r.recargo > 0 ? ` (recargo ${mxn(r.recargo)})` : ""}${r.rehacer?.length ? ` · Se rehace: ${r.rehacer.map((e) => etapaLabel[e] ?? e).join(", ")}` : ""}`);
     const texto = mensajeCambio({ cliente: o!.clientes?.nombre ?? "", folio: o!.folio, cambios: lista, total: mxn(r.precio), saldo: mxn(Math.max(Number(r.precio) - pagado, 0)) });
@@ -125,7 +131,7 @@ function Ficha() {
         <Button variant="outline" onClick={ics}>Descargar .ics</Button>
         {puedeCaja && o.estado === "borrador" && <Button onClick={() => { setForm({ ...form, metodo: "efectivo", monto: Math.round(Number(o.precio) * 50) / 100, clave: crypto.randomUUID() }); setDlg("confirmar"); }}>Confirmar con anticipo</Button>}
         {puedeCaja && activo && <>
-          <Button variant="outline" onClick={() => { setForm({ ...form, porciones: o.porciones, sabor: o.sabor_id, relleno: o.relleno_id, cobertura: o.cobertura_id, fecha: fechaLocal(o.fecha_entrega), hora: horaLocal(o.fecha_entrega) }); setDlg("cambio"); }}>Modificar pedido</Button>
+          <Button variant="outline" onClick={() => { setForm({ ...form, porciones: o.porciones, sabor: o.sabor_id, relleno: o.relleno_id, cobertura: o.cobertura_id, fecha: fechaLocal(o.fecha_entrega), hora: horaLocal(o.fecha_entrega) }); setErrCambio(null); setDlg("cambio"); }}>Modificar pedido</Button>
           <Button variant="outline" onClick={() => { setForm({ ...form, monto: saldo, clave: crypto.randomUUID() }); setDlg("cobro"); }} disabled={saldo <= 0}>Cobrar saldo</Button>
           <Button onClick={() => { setForm({ ...form, motivo: "" }); setDlg("entregar"); }}>Marcar entregada</Button>
           <Button variant="destructive" onClick={() => { setForm({ ...form, motivo: "" }); setDlg("cancelar"); }}>Cancelar</Button>
@@ -184,6 +190,8 @@ function Ficha() {
         </ol>
       </section>
 
+      <HorasExtraDialog open={heOpen} onOpenChange={setHeOpen} ordenId={id} inicial={errCambio ? horasExtraDesdeAviso(errCambio, fechaLocal(fechaNueva)) : null}
+        onDone={() => qc.invalidateQueries({ queryKey: ["solicitudes"] })} />
       <Dialog open={dlg !== null} onOpenChange={(v) => !v && setDlg(null)}>
         <DialogContent>
           {dlg === "confirmar" && <>
@@ -209,6 +217,21 @@ function Ficha() {
             {cambios.length > 0 ? (
               <ul className="rounded-md bg-muted p-3 text-sm">{cambios.map((c) => <li key={c.campo}><b>{c.campo}:</b> {c.antes} → {c.ahora}</li>)}</ul>
             ) : <p className="text-sm text-muted-foreground">Todavía no has cambiado nada.</p>}
+            {errCambio && <div role="alert" className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">
+              <p className="font-bold text-destructive">⚠ {errCambio}</p>
+              {pideUrgencia(errCambio) && (() => {
+                const u = solicitudes?.find((x) => x.tipo === "urgencia");
+                return u?.estado === "pendiente" ? <p className="mt-1">⏳ Esperando que Administración autorice la urgencia…</p>
+                  : u?.estado === "aprobada" ? <p className="mt-1 font-bold text-success">✓ Urgencia autorizada: vuelve a pulsar «Aplicar cambio».</p>
+                  : <Button size="sm" className="mt-2" onClick={async () => {
+                      try { const r = await pedirAutorizacion({ tipo: "urgencia", orden: id, motivo: `Cambio de entrega a ${fechaHora(fechaNueva)} por debajo del plazo` });
+                        toast.success(r.estado === "aprobada" ? "Urgencia autorizada" : "Solicitud enviada a Administración"); qc.invalidateQueries({ queryKey: ["solicitudes"] });
+                      } catch (e) { toast.error(errMsg(e)); }
+                    }}>{s?.rol === "administracion" ? "Autorizar urgencia (+15 %)" : "Solicitar urgencia (+15 %)"}</Button>;
+              })()}
+              {horasExtraDesdeAviso(errCambio, fechaLocal(fechaNueva)) && <Button size="sm" className="mt-2" onClick={() => setHeOpen(true)}>Solicitar horas extra</Button>}
+              <EstadoHorasExtra lista={solicitudes} />
+            </div>}
             <DialogFooter><Button disabled={!!avisoPorciones || cambios.length === 0} onClick={aplicarCambio}>Aplicar cambio</Button></DialogFooter>
           </>}
           {dlg === "aviso" && <>

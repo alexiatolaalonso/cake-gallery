@@ -789,6 +789,69 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitudes_autorizacion: {
+        Row: {
+          creado: string
+          equipo_id: string | null
+          estado: string
+          fecha: string | null
+          id: string
+          minutos: number | null
+          motivo: string
+          motivo_rechazo: string | null
+          orden_id: string | null
+          pedida_por: string | null
+          resuelta: string | null
+          resuelta_por: string | null
+          tipo: string
+        }
+        Insert: {
+          creado?: string
+          equipo_id?: string | null
+          estado?: string
+          fecha?: string | null
+          id?: string
+          minutos?: number | null
+          motivo: string
+          motivo_rechazo?: string | null
+          orden_id?: string | null
+          pedida_por?: string | null
+          resuelta?: string | null
+          resuelta_por?: string | null
+          tipo: string
+        }
+        Update: {
+          creado?: string
+          equipo_id?: string | null
+          estado?: string
+          fecha?: string | null
+          id?: string
+          minutos?: number | null
+          motivo?: string
+          motivo_rechazo?: string | null
+          orden_id?: string | null
+          pedida_por?: string | null
+          resuelta?: string | null
+          resuelta_por?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_autorizacion_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_autorizacion_orden_id_fkey"
+            columns: ["orden_id"]
+            isOneToOne: false
+            referencedRelation: "ordenes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tareas: {
         Row: {
           dia: string
@@ -943,6 +1006,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _aplicar_solicitud: {
+        Args: {
+          s: Database["public"]["Tables"]["solicitudes_autorizacion"]["Row"]
+        }
+        Returns: undefined
+      }
       _caducar_lotes: { Args: never; Returns: number }
       _cargo_entrega: {
         Args: { m: Database["public"]["Enums"]["modo_entrega"] }
@@ -969,6 +1038,10 @@ export type Database = {
       _disponible_para: {
         Args: { p_excluir: string; p_insumo: string; p_para: string }
         Returns: number
+      }
+      _es_urgente: {
+        Args: { p_fecha: string; p_nivel: string; p_porciones: number }
+        Returns: boolean
       }
       _generar_plan: { Args: { p_orden: string }; Returns: undefined }
       _minutos_etapa: {
@@ -1059,6 +1132,7 @@ export type Database = {
         }[]
       }
       _tz: { Args: never; Returns: string }
+      _urgencia_ok: { Args: { p_orden: string }; Returns: boolean }
       _usados: {
         Args: { p_dia: string; p_equipo: string; p_excluir: string }
         Returns: number
@@ -1071,15 +1145,26 @@ export type Database = {
         }
         Returns: undefined
       }
-      _validar_pedido: {
-        Args: {
-          p_fecha: string
-          p_nivel: string
-          p_porciones: number
-          p_tipo: string
-        }
-        Returns: undefined
-      }
+      _validar_pedido:
+        | {
+            Args: {
+              p_fecha: string
+              p_nivel: string
+              p_porciones: number
+              p_tipo: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_fecha: string
+              p_nivel: string
+              p_porciones: number
+              p_tipo: string
+              p_urgente: boolean
+            }
+            Returns: undefined
+          }
       autorizar_horas_extra: {
         Args: {
           p_equipo: string
@@ -1298,9 +1383,24 @@ export type Database = {
           precio: number
         }[]
       }
+      resolver_solicitud: {
+        Args: { p_aprobar: boolean; p_id: string; p_motivo: string }
+        Returns: undefined
+      }
       rol_en: {
         Args: { _roles: Database["public"]["Enums"]["app_role"][] }
         Returns: boolean
+      }
+      solicitar_autorizacion: {
+        Args: {
+          p_equipo: string
+          p_fecha: string
+          p_minutos: number
+          p_motivo: string
+          p_orden: string
+          p_tipo: string
+        }
+        Returns: Json
       }
       verificar_capacidad: {
         Args: {

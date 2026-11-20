@@ -11,13 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { EstadoHorasExtra, EstadoUrgencia, HorasExtraDialog, pedirAutorizacion, useSolicitudesOrden } from "@/components/Autorizaciones";
 
 export const Route = createFileRoute("/_authenticated/cotizador")({
   head: () => meta("Cotizador", "Cotiza pasteles por porciones, sabor, diseño y entrega"),
   component: Cotizador,
 });
 
-type Cot = { precio: number; anticipo: number; plazo_dias: number; primera_fecha: string; error: string | null };
+type Cap = { ok: boolean; motivo: string | null; sin_hueco?: boolean; equipo_id?: string; equipo?: string; fecha?: string; minutos?: number };
+type Cot = { precio: number; anticipo: number; urgente?: boolean; recargo?: number; total?: number; anticipo_total?: number; plazo_dias: number; primera_fecha: string; error: string | null };
 const sel = "h-10 w-full rounded-md border border-input bg-card px-3 text-sm";
 
 function Cotizador() {
@@ -32,7 +34,10 @@ function Cotizador() {
   const [confirmar, setConfirmar] = useState(false);
   const [pago, setPago] = useState({ metodo: "efectivo" as "efectivo" | "transferencia" | "tarjeta", monto: 0, clave: "" });
   const [ocupado, setOcupado] = useState(false);
-  const [cap, setCap] = useState<{ ok: boolean; motivo: string | null } | null>(null);
+  const [cap, setCap] = useState<Cap | null>(null);
+  const [heOpen, setHeOpen] = useState(false);
+  const { data: solicitudes } = useSolicitudesOrden(borradorId);
+  const firmaSol = (solicitudes ?? []).map((x) => x.id + x.estado).join();
 
   useEffect(() => {
     if (cat && !f.tipo) setF((x) => ({ ...x, tipo: cat.tipos[0]?.id ?? "", sabor: cat.sabores[0]?.id ?? "", relleno: cat.rellenos[0]?.id ?? "", cobertura: cat.coberturas[0]?.id ?? "", nivel: cat.niveles[0]?.id ?? "" }));
@@ -65,10 +70,10 @@ function Cotizador() {
         p_nivel: f.nivel, p_modo: f.modo, p_fecha: fechaISO,
       });
       if (error) setCap({ ok: false, motivo: errMsg(error) });
-      else setCap(data as unknown as { ok: boolean; motivo: string | null });
+      else setCap(data as unknown as Cap);
     }, 300);
     return () => clearTimeout(t);
-  }, [cot, fechaISO, porcionesOk, f.tipo, f.porciones, f.sabor, f.relleno, f.cobertura, f.nivel, f.modo]);
+  }, [cot, fechaISO, porcionesOk, f.tipo, f.porciones, f.sabor, f.relleno, f.cobertura, f.nivel, f.modo, firmaSol]);
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setF((x) => {
@@ -142,8 +147,20 @@ function Cotizador() {
     setOcupado(true);
     try {
       await guardar();
-      setPago({ metodo: "efectivo", monto: cot?.anticipo ?? 0, clave: crypto.randomUUID() });
+      setPago({ metodo: "efectivo", monto: anticipo ?? 0, clave: crypto.randomUUID() });
       setConfirmar(true);
+    } catch (e) { toast.error(errMsg(e)); } finally { setOcupado(false); }
+  }
+  const urgente = !!cot?.urgente && !cot.error;
+  const urgenciaOk = !urgente || !!solicitudes?.some((x) => x.tipo === "urgencia" && x.estado === "aprobada");
+  const total = cot?.total ?? cot?.precio, anticipo = cot?.anticipo_total ?? cot?.anticipo;
+  async function pedirUrgencia() {
+    setOcupado(true);
+    try {
+      const id = await guardar();
+      const r = await pedirAutorizacion({ tipo: "urgencia", orden: id, motivo: `Entrega ${fechaHora(fechaISO)} por debajo del plazo de ${cot?.plazo_dias} días` });
+      toast.success(r.estado === "aprobada" ? "Urgencia autorizada" : "Solicitud enviada a Administración");
+      qc.invalidateQueries({ queryKey: ["solicitudes"] });
     } catch (e) { toast.error(errMsg(e)); } finally { setOcupado(false); }
   }
   async function onConfirmar() {
@@ -212,8 +229,9 @@ function Cotizador() {
         <aside className="space-y-4">
           <div className="sticky top-4 space-y-4 rounded-xl border-2 border-gold bg-card p-6">
             <p className="text-sm uppercase tracking-widest text-muted-foreground">Precio calculado</p>
-            <p className="font-display text-4xl font-bold">{mxn(cot?.precio)}</p>
-            <p className="text-sm">Anticipo 50%: <b>{mxn(cot?.anticipo)}</b></p>
+            <p className="font-display text-4xl font-bold">{mxn(total)}</p>
+            {urgente && <p className="text-sm">{mxn(cot?.precio)} + recargo urgencia 15 %: <b>{mxn(cot?.recargo)}</b></p>}
+            <p className="text-sm">Anticipo 50%: <b>{mxn(anticipo)}</b></p>
             <p className="text-sm">Plazo mínimo: <b>{cot?.plazo_dias ?? "—"} días</b></p>
             {cot && (cot.error || !f.fecha ? (
               <div role="alert" className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm">
@@ -224,20 +242,25 @@ function Cotizador() {
                   setF((x) => ({ ...x, fecha: d.toLocaleDateString("en-CA", { timeZone: TZ }), hora: "12:00" }));
                 }}>Usar esa fecha</Button>
               </div>
-            ) : (
-              !cap ? <p className="rounded-md border p-3 text-sm text-muted-foreground">Comprobando capacidad del obrador…</p>
+            ) : (<>
+              {urgente && <EstadoUrgencia ordenId={borradorId} lista={solicitudes} onPedir={pedirUrgencia} />}
+              {!cap ? <p className="rounded-md border p-3 text-sm text-muted-foreground">Comprobando capacidad del obrador…</p>
               : cap.ok ? <p className="rounded-md border border-success bg-success/10 p-3 text-sm font-bold text-success">✓ Hay capacidad: se puede confirmar con anticipo.</p>
-              : <div role="alert" className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm"><p className="font-bold text-destructive">⚠ No se puede confirmar en esa fecha</p><p className="mt-1">{cap.motivo}</p></div>
-            ))}
+              : <div role="alert" className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm"><p className="font-bold text-destructive">⚠ No se puede confirmar en esa fecha</p><p className="mt-1">{cap.motivo}</p>
+                  {cap.sin_hueco && <Button size="sm" className="mt-2" onClick={async () => { try { await guardar(); setHeOpen(true); } catch (e) { toast.error(errMsg(e)); } }}>Solicitar horas extra</Button>}
+                  <EstadoHorasExtra lista={solicitudes} /></div>}
+            </>))}
             <div className="grid gap-2">
               <Button variant="outline" onClick={onGuardar} disabled={ocupado || !porcionesOk}>Guardar borrador</Button>
               <Button variant="outline" onClick={compartir} disabled={!cot}>Compartir por WhatsApp</Button>
-              <Button onClick={abrirConfirmar} disabled={ocupado || !porcionesOk || !!cot?.error || !f.fecha || !cap?.ok}>Confirmar con anticipo</Button>
+              <Button onClick={abrirConfirmar} disabled={ocupado || !porcionesOk || !!cot?.error || !f.fecha || !cap?.ok || !urgenciaOk}>Confirmar con anticipo</Button>
             </div>
           </div>
         </aside>
       </div>
 
+      <HorasExtraDialog open={heOpen} onOpenChange={setHeOpen} ordenId={borradorId} inicial={cap?.sin_hueco ? { equipo_id: cap.equipo_id ?? null, fecha: cap.fecha ?? "", minutos: cap.minutos ?? 60 } : null}
+        onDone={() => { qc.invalidateQueries({ queryKey: ["solicitudes"] }); setCap(null); setF((x) => ({ ...x })); }} />
       <Dialog open={fichaCliente} onOpenChange={setFichaCliente}>
         <DialogContent>
           <DialogHeader><DialogTitle>Nuevo cliente</DialogTitle></DialogHeader>
@@ -257,7 +280,7 @@ function Cotizador() {
       <Dialog open={confirmar} onOpenChange={setConfirmar}>
         <DialogContent>
           <DialogHeader><DialogTitle>Confirmar con anticipo</DialogTitle></DialogHeader>
-          <p className="text-sm">Total {mxn(cot?.precio)} · mínimo 50%: <b>{mxn(cot?.anticipo)}</b>. Se verifican minutos libres en cada etapa e insumos.</p>
+          <p className="text-sm">Total {mxn(total)} · mínimo 50%: <b>{mxn(anticipo)}</b>. Se verifican minutos libres en cada etapa e insumos.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1"><Label>Método</Label>
               <select className={sel} value={pago.metodo} onChange={(e) => setPago({ ...pago, metodo: e.target.value as typeof pago.metodo })}>
